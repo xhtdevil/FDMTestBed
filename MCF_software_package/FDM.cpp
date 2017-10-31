@@ -546,15 +546,19 @@ int main() {
 			else
 				output << "add sat: " << names[i] << endl;
 		}
+		output<<"End"<<endl;
+
 		for (int i = 0; i < nl; i++) {
 			if (i < n_src_host) {
-				for (int j = 0; j < usedIP[names[End1[i]]].size(); j++) {
+				int ship=End2[i];
+				for (int j = 0; j < ship_sat[ship-n_host]; j++) {
 					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 				}
 			}
 			else
 				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 		}
+		output<<"End"<<endl;
 		//printing ip
 		for (int i = 0; i < n_src_host; i++) {
 			string key = names[End1[i]];
@@ -562,6 +566,7 @@ int main() {
 			for (auto ip : usedIP[key])
 				output << ip << endl;
 		}
+		output<<"End"<<endl;
 		//printing link flow table
 		for (int link = 0; link < nl; link++) {
 			auto endpoints = v_pairs[link].first;
