@@ -1,23 +1,26 @@
 #include "fdm.h"
+#include<fstream>
+#include<iostream>
+#include <string>
+#include <set>
+#include <algorithm>
 
-
-
-int original_main() {
+int main() {
 
 	int choice;
 	cout << "Choose 1 to provide config file\n choose 0 to randomly generate\n";
 	cin >> choice;
 	cin.ignore();
-	
-	int n_ship, n_sat;
 
-	vector<vector<int> > connectivity;
+	int n_ship, n_sat, n_host, n_src_host;
+	vector<vector<int>> host_ship_connect;
+	vector<vector<int>> connectivity;
 	int count_link = 0;
-
-	vector<vector<double> > requests;
-
+	vector<int> ship_sat;
+	vector<vector<double>> requests;
+	vector<vector<double>> uplink_capacities;
 	vector<double> sat_capacities;
-	vector<vector<double> > downlink_capacities;
+	vector<vector<double>> downlink_capacities;
 	unordered_map<int, int> srcDest;
 
 
@@ -37,7 +40,7 @@ int original_main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-		
+
 		double prob_of_conn = 0.7;
 		bool random_input = true;
 		srand(time(NULL));
@@ -48,10 +51,10 @@ int original_main() {
 
 		//matrix with m ships, n satellites, and link info
 
-		
+
 		bool regenerate = true;
 
-		//generate topology and src-dest pairs 
+		//generate topology and src-dest pairs
 		//that are connected through at least one sat
 		while (regenerate) {
 			regenerate = false;
@@ -67,7 +70,7 @@ int original_main() {
 						link_per_ship++;
 					}
 				}
-				//if a ship has no connection to sat, 
+				//if a ship has no connection to sat,
 				// randomly connect to one
 				if (link_per_ship == 0) {
 					int ind = rand() % n_sat;
@@ -76,7 +79,7 @@ int original_main() {
 				}
 			}
 
-			//randomly pair up source and dest	
+			//randomly pair up source and dest
 			for (int i = 0; i < n_ship; i++) {
 				vector<int> candidate_dest;
 				for (int j = 0; j < n_sat; j++) {
@@ -187,25 +190,57 @@ int original_main() {
 
 		config >> n_ship >> n_sat;
 
+		n_host = 0;
+
+		host_ship_connect.resize(n_ship);
 		connectivity.resize(n_ship, vector<int>(n_sat, 0));
-		requests.resize(n_ship, vector<double>(n_ship, 0));
+		//requests.resize(n_ship, vector<double>(n_ship, 0));
+		uplink_capacities.resize(n_ship, vector<double>(n_sat, 0));
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
+
+
+
+		for (int i = 0; i < n_ship; i++) {
+			int num_host = 0;
+			config >> num_host;
+			for (int h = 0; h < num_host; h++)
+				host_ship_connect[i].push_back(h + n_host);
+			n_host += num_host;
+		}
+
+		ship_sat.resize(n_ship, 0);
 
 		for (int i = 0; i < n_ship; i++) {
 			for (int j = 0; j < n_sat; j++) {
 				config >> connectivity[i][j];
-				if (connectivity[i][j])
+				if (connectivity[i][j]) {
+					ship_sat[i]++;
 					count_link++;
+				}
 			}
 		}
+
+		n_src_host = n_host - n_ship;
+		requests.resize(n_host, vector<double>(n_host, 0));
+		//TODO: define input format for host-to-host request
+		//ship to ship, total n_src_host line
+		vector<int> tab(n_ship, 0);
+		for (int i = 0; i < n_src_host; i++) {
+			int srcship, destship;
+			double demand;
+			config >> srcship >> destship >> demand;
+			int srcid = tab[srcship];
+			tab[srcship]++;
+			requests[host_ship_connect[srcship][srcid]][host_ship_connect[destship].back()] = demand;
+			srcDest[host_ship_connect[srcship][srcid]] = host_ship_connect[destship].back();
+		}
+
 		for (int i = 0; i < n_ship; i++) {
-			for (int j = 0; j < n_ship; j++) {
-				config >> requests[i][j];
-				if (requests[i][j] > 0)
-					srcDest[i] = j;
-			}
+			for (int j = 0; j < n_sat; j++)
+				config >> uplink_capacities[i][j];
 		}
+
 		for (int i = 0; i < n_sat; i++) {
 			config >> sat_capacities[i];
 		}
@@ -214,7 +249,6 @@ int original_main() {
 				config >> downlink_capacities[i][j];
 			}
 		}
-
 	}
 
 
@@ -222,53 +256,95 @@ int original_main() {
 	##					Topology Builder				   ##
 	#########################################################
 	*/
-	int nn = n_ship + 2 * n_sat;
-	int nl = 2 * count_link + n_sat;
+	int nn = n_host+n_ship + 3 * n_sat;
+	int nl = n_host+2 * count_link + 2*n_sat;
 	ofstream output;
 	output.open("allocation.txt");
 
-
-	vector<int> ships(n_ship,0);
-	vector<int> sats(n_sat,0);
+	set<int> ships, hubs;
 	for (int i = 0; i < n_ship; i++) {
-		ships[i] = i;
+		ships.insert(i+n_host);
 	}
 	for (int i = 0; i < n_sat; i++) {
-		sats[i] = n_ship + i;
+		hubs.insert(i + n_host + n_ship + n_sat);
 	}
 
-	vector<pair<pair<int, int>, double> > v_pairs(nl);
+
+	vector<int> ports(nn);
+	vector<string> names(nn);
+	for (int i = 0,cnt=1; i < nn; i++) {
+		if (i < n_host) {
+			ports[i] = 0;
+			names[i] = "host" + to_string(i);
+		}
+		else {
+			ports[i] = 1;
+			names[i] = "s" + to_string(cnt++);
+		}
+	}
+
+	vector<pair<pair<pair<int,int>,pair<int,int>>,double>> v_pairs(nl);
 	//adding uplinks
 	int help_count = 0;
+	//adding links between host and ship
 	for (int i = 0; i < n_ship; i++) {
-		output << "link between ship " << i << " and sat ";
+		//output << "link between ship " << i << " and host " << endl;
+		for (int j = 0; j < host_ship_connect[i].size() - 1; j++) {
+			int host = host_ship_connect[i][j], ship = n_host + i;
+			v_pairs[help_count] = { {{host,ports[host]},{ship,ports[ship]}},-1 };
+			//output << host << ", ship port: " << ports[ship] << " host port: " << ports[host]<<endl;
+			//output << "\t\t\tdestination host is " << srcDest[host] << endl;
+			ports[host]++; ports[ship]+=ship_sat[i]; help_count++;
+		}
+	}
+	//adding links between ship and sat
+	for (int i = 0; i < n_ship; i++) {
+		//output << "link between ship " << i << " and sat " << endl;
 		for (int j = 0; j < n_sat; j++) {
 			if (connectivity[i][j]) {
-				v_pairs[help_count] = {{ i,n_ship + j },-1};
-				output << j<<" ";
-				help_count++;
+				int ship = n_host + i, sat = n_host + n_ship + j;
+				v_pairs[help_count] = { {{ship,ports[ship]}, {sat,ports[sat]} },uplink_capacities[i][j] };
+				//output << j<<" , ship port:"<<ports[ship]<<" sat prot:"<<ports[sat]<<endl;
+				ports[ship]++; ports[sat]++; help_count++;
 			}
 		}
-		output <<'\t'<<'\t'<<'\t'<<"destination is ship "<<srcDest[i]<< endl;
 	}
-	output << endl;
-	//adding dummy nodes and link capacities
+	//adding links between sat and hubs
 	for (int i = 0; i < n_sat; i++) {
-		v_pairs[help_count] = {{n_ship+i,n_ship+n_sat+i},sat_capacities[i]};
-		output << "capacity of sat " << i << " " << sat_capacities[i] << endl;
-		help_count++;
+		int sat = n_host + n_ship + i, hub = n_host + n_ship + n_sat + i;
+		v_pairs[help_count] = { {{sat,ports[sat]}, {hub,ports[hub]}},sat_capacities[i] };
+		//output << "capacity of sat " << i << " " << sat_capacities[i] << endl;
+		//output << "sat port:" << ports[sat] << " , hub port:" << ports[hub] << endl;
+		ports[sat]++; ports[hub]++; help_count++;
+	}
+	//adding links between hubs and sats
+	for (int i = 0; i < n_sat; i++) {
+		int sat = n_host + n_ship+2*n_sat + i, hub = n_host + n_ship + n_sat + i;
+		v_pairs[help_count] = { { { hub,ports[hub] },{ sat,ports[sat] } },sat_capacities[i] };
+		//output << "capacity of sat " << i << " " << sat_capacities[i] << endl;
+		//output << "sat port:" << ports[sat] << " , hub port:" << ports[hub] << endl;
+		ports[sat]++; ports[hub]++; help_count++;
 	}
 
 	//adding downlinks
 	for (int j = 0; j < n_sat; j++) {
+		//output << "link between sat " << j << " and ship ";
 		for (int i = 0; i < n_ship; i++) {
 			if (connectivity[i][j]) {
-				v_pairs[help_count] = {{ n_ship+n_sat+j,i },downlink_capacities[j][i]};
-				help_count++;
+				int sat = n_host + n_ship + 2 * n_sat + j, ship = n_host + i;
+				v_pairs[help_count] = { { {sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
+				//output << i << " , ship port:" << ports[ship] << " sat prot:" << ports[sat] << endl;
+				ports[sat]++; ports[ship]++; help_count++;
 			}
 		}
 	}
-
+	//adding ship dest
+	for (int i = 0; i < n_ship; i++) {
+		int ship = n_host + i, dest = host_ship_connect[i].back();
+		v_pairs[help_count] = { {{ship,ports[ship]},{dest,ports[dest]}},-1 };
+		//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
+		ports[dest]++; ports[ship]++; help_count++;
+	}
 	//adj matrix
 	vector<vector<int>> adj(nn, vector<int>());
 
@@ -290,9 +366,9 @@ int original_main() {
 	for (auto it : v_pairs) {
 		auto end_points = it.first;
 		double capacity = it.second;
-		End1[link_count] = end_points.first;
-		End2[link_count] = end_points.second;
-		adj[end_points.first].push_back(link_count);
+		End1[link_count] = end_points.first.first;
+		End2[link_count] = end_points.second.first;
+		adj[end_points.first.first].push_back(link_count);
 		Cap[link_count] = capacity == -1 ? INFINITY : capacity;
 		link_count++;
 	}
@@ -302,6 +378,22 @@ int original_main() {
 		for (int i = 0; i < v.size(); i++)
 			Adj[node_count][i] = v[i];
 		node_count++;
+	}
+
+	//define per-link hashtable to store flows
+	vector<unordered_map<string, double>> Gtable(nl), Etable(nl);
+
+	for (int i = 0; i < n_ship; i++) {
+		int ship = n_host + i;
+		for (int j = 0; j < host_ship_connect[i].size() - 1; j++) {
+			int host = host_ship_connect[i][j];
+			for (int k = 0; k < adj[ship].size()-1; k++) {
+				int sat = End2[adj[ship][k]];
+				string key = to_string(host) + " " + to_string(sat);
+				string value = "10.0." + to_string(host) + "." + to_string(k);
+				IPtable[key] = value;
+			}
+		}
 	}
 
 	double** Req=new double* [nn], **MM_Req=new double* [nn], ** SPdist=new double* [nn];
@@ -349,16 +441,15 @@ int original_main() {
 	}
 
 
-	for (int i = 0; i < n_ship; i++) {
-		for (int j = 0; j < n_ship; j++) {
+	for (int i = 0; i < n_host; i++) {
+		for (int j = 0; j < n_host; j++) {
 			if (requests[i][j] > 0) {
 				Req[i][j] = requests[i][j];
 			}
-
 		}
 	}
 
-	
+
 	for(int i = 0; i < nn; i++) {
 		for(int n = 0; n < nn; n ++) {
 			TotReq += Req[i][n];
@@ -370,16 +461,14 @@ int original_main() {
 
 
 	/*#######################################################
-	##					FDM algorithm					   ## 
+	##					FDM algorithm					   ##
 	#########################################################
 	*/
 
-	//time start
-	const clock_t start = clock();
 
 	SetLinkLens(nl, Gflow, Cap, MsgLen, FDlen, Cost);
 	SetSP(nn, link, End2, FDlen, Adj, SPdist, SPpred);
-	LoadLinks(nn, nl, Req, SPpred, End1, Gflow);
+	LoadLinks(nn, nl, Req, SPpred, End1, Gflow, Gtable);
 	Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 	if (Aresult == 1)
 		Aflag = 0;
@@ -392,17 +481,17 @@ int original_main() {
 	while(Aflag || (CurrentDelay < PreviousDelay*(1-EPSILON))) {
 		SetLinkLens(nl, Gflow, NewCap, MsgLen, FDlen, Cost);
 		SetSP(nn, link, End2, FDlen, Adj, SPdist, SPpred);
-		LoadLinks(nn, nl, Req, SPpred, End1, Eflow);
+		LoadLinks(nn, nl, Req, SPpred, End1, Eflow,Etable);
 		//previous delay based on current NewCap
 		PreviousDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost);
+		Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost, Gtable, Etable);
 		//current delay after superposition
 		CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
+
 		//PreviousDelay = CurrentDelay;
 		//CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
-		
+
+
 		if(Aflag) {
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
@@ -410,8 +499,8 @@ int original_main() {
 			else
 				Aflag = 1;
 		}
-		
-		//judge whether the problem is feasible 
+
+		//judge whether the problem is feasible
 		//double max_FD_len = 0, min_FD_len = INFINITY;
 		//for (int i = 0; i < nl; i++) {
 		//	if (FDlen[i] > 0) {
@@ -425,49 +514,98 @@ int original_main() {
 			print = 0;
 			break;
 		}
-		
+
 		//for(i = 0; i < nl; i ++) {
 		//	printf("Gflow[%d] in iteration is %f\n", i,Gflow[i]);
 		//}
-		
+
 	 	//printf("%f\n", PreviousDelay);
 		count++;
 	}
 	if(print) {
-		output<<("\n");
-	 	/*for(int i = 0; i < nl; i ++) {
-			printf("Gflow[%d] is %f\n", i,Gflow[i]);
-			printf("fd_length[%d] is %f\n", i, FDlen[i]);
-		}*/
-
-		//count  traffic at each ship
-		for (auto u : ships) {
-			double sum = 0;
-			output << "Ship " << u << ":\n";
-			for (auto l : adj[u]) {
-				if (Gflow[l] > 0) {
-					output << "Usage at sat " << End2[l]-n_ship << " is " << Gflow[l] << "\n";
-					sum += Gflow[l];
+		//output<<("\n");
+		//add IP
+		unordered_map<string, vector<string>> usedIP;
+		for (int link = 0; link < n_src_host; link++) {
+			int src_node = End1[link];
+			for (auto it : Gtable[link]) {
+				if (it.second > 1.0e-5) {
+					usedIP[names[src_node]].push_back(it.first);
 				}
 			}
-			output << "Total out going flow at ship " << u << " is " << sum << endl;
+		}
 
-			sum = 0;
-			int dest = srcDest[u];
-			for (int i = 0; i < nl; i++) {
-				if (End2[i] == dest) {
-					output << "Downlink at sat " << End1[i]-n_ship-n_sat << " is " << Gflow[i] << "\n";
-					sum += Gflow[i];
+		//output nodes and links in order
+		for (int i = 0; i < nn; i++) {
+			if (i < n_host)
+				output << "add host: " << names[i] << endl;
+			else if (ships.find(i) != ships.end())
+				output << "add ship: " << names[i] << endl;
+			else if (hubs.find(i) != hubs.end())
+				output << "add hub: " << names[i] << endl;
+			else
+				output << "add sat: " << names[i] << endl;
+		}
+		for (int i = 0; i < nl; i++) {
+			if (i < n_src_host) {
+				for (int j = 0; j < usedIP[names[End1[i]]].size(); j++) {
+					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 				}
 			}
-			output << "Total in comming flow at ship " << dest << " is " << sum << endl<<endl;
+			else
+				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 		}
-		//count traffic at each satellite
-		for (auto s : sats) {
-			for (auto l : adj[s]) {
-				output << "Total load at sat " << s << " is " << Gflow[l] << "\n";
+		//printing ip
+		for (int i = 0; i < n_src_host; i++) {
+			string key = names[End1[i]];
+			output << key << " num_of_ip: " << usedIP[key].size() << endl;
+			for (auto ip : usedIP[key])
+				output << ip << endl;
+		}
+		//printing link flow table
+		for (int link = 0; link < nl; link++) {
+			auto endpoints = v_pairs[link].first;
+			auto node1 = endpoints.first, node2 = endpoints.second;
+			int src_node = node1.first, src_port = node1.second, dst_node = node2.first, dst_port = node2.second;
+			for (auto it : Gtable[link]) {
+				if (it.second < 1.0e-5){
+					Gtable[link].erase(it.first);
+				}
+			}
+			if (Gtable[link].size()==0) continue;
+			output << names[src_node] + "-eth" + to_string(src_port) << " " << names[dst_node] + "-eth" + to_string(dst_port) << "\tnum_of_flow:" << Gtable[link].size() << endl;
+			for (auto it : Gtable[link]) {
+				output << "\t\t" << it.first << " " << it.second << endl;
 			}
 		}
+
+
+
+
+
+		////count  traffic at each ship
+		//for (auto u : ships) {
+		//	double sum = 0;
+		//	output << "Ship " << u << ":\n";
+		//	for (auto l : adj[u]) {
+		//		if (Gflow[l] > 0) {
+		//			output << "Usage at sat " << End2[l]-n_ship << " is " << Gflow[l] << "\n";
+		//			sum += Gflow[l];
+		//		}
+		//	}
+		//	output << "Total out going flow at ship " << u << " is " << sum << endl;
+
+		//	sum = 0;
+		//	int dest = srcDest[u];
+		//	for (int i = 0; i < nl; i++) {
+		//		if (End2[i] == dest) {
+		//			output << "Downlink at sat " << End1[i]-n_ship-n_sat << " is " << Gflow[i] << "\n";
+		//			sum += Gflow[i];
+		//		}
+		//	}
+		//	output << "Total in comming flow at ship " << dest << " is " << sum << endl<<endl;
+		//}
+
 
 		cout << "Problem is feasible. Results in allocation.txt!\n";
 	 	//printf("current delay is %f\n", CurrentDelay);
@@ -507,7 +645,7 @@ int original_main() {
 			}
 			SetLinkLens(nl, Gflow, Cap, MsgLen, FDlen, Cost);
 			SetSP(nn, link, End2, FDlen, Adj, SPdist, SPpred);
-			LoadLinks(nn, nl, MM_Req, SPpred, End1, Gflow);
+			LoadLinks(nn, nl, MM_Req, SPpred, End1, Gflow,Etable);
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
 				Aflag = 0;
@@ -518,9 +656,9 @@ int original_main() {
 			while (Aflag || (CurrentDelay < PreviousDelay*(1 - EPSILON))) {
 				SetLinkLens(nl, Gflow, NewCap, MsgLen, FDlen, Cost);
 				SetSP(nn, link, End2, FDlen, Adj, SPdist, SPpred);
-				LoadLinks(nn, nl, MM_Req, SPpred, End1, Eflow);
+				LoadLinks(nn, nl, MM_Req, SPpred, End1, Eflow,Etable);
 				PreviousDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-				Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost);
+				Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost, Gtable, Etable);
 				CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
 
 				if (Aflag) {
@@ -530,7 +668,7 @@ int original_main() {
 					else
 						Aflag = 1;
 				}
-				//judge whether the problem is feasible 
+				//judge whether the problem is feasible
 				/*double max_FD_len = 0, min_FD_len = INFINITY;
 				for (int i = 0; i < nl; i++) {
 					if (FDlen[i] > 0) {
@@ -597,20 +735,16 @@ int original_main() {
 			output << "Total in comming flow at ship " << dest << " is " << sum << endl << endl;
 		}
 		//count traffic at each satellite
-		for (auto s : sats) {
-			for (auto l : adj[s]) {
-				output << "Total load at sat " << s << " is " << Pflow[l] << "\n";
-			}
-		}
+		//for (auto s : sats) {
+		//	for (auto l : adj[s]) {
+		//		output << "Total load at sat " << s << " is " << Pflow[l] << "\n";
+		//	}
+		//}
 
 		cout << "Problem is infeasible. Max-Min solution in allocation.txt!\n";
 	}
-	// time end
-	double seconds_since_start = float(clock()-start)/CLOCKS_PER_SEC;
-	output << "Computing time is " << seconds_since_start << "\n";
+
 	output.close();
-
-
 	//recycle
 	delete[] End1, End2, Cap, Gflow, Eflow, Pflow, FDlen, NewCap, Cost;
 	for (int i = 0; i < nn; i++) {
@@ -622,150 +756,3 @@ int original_main() {
 
 	return 0;
 }
-
-double avg(vector<double> v) {
-	double sum = 0;
-	for (int i = 0; i < v.size(); i++) {
-		sum += v[i];
-	}
-	return sum / v.size();
-}
-
-double stand_dev(vector<double> v, double avg) {
-	double sum = 0;
-	for (auto ve : v) {
-		sum += (ve - avg)*(ve - avg);
-	}
-	return sqrt(sum / v.size());
-}
-
-int main() {
-
-	int round = 20;
-	double saturate = 0.5;
-	//------ case 1 ------------
-	/*
-	Keep saturation ratio=total req/total cap a  constant, therefore 
-	time to converge has only to do with network size
-	*/
-	//ofstream file;
-	//file.open("performance_new.txt");
-	
-	//int satLimit = 10, shipLimit = 210;
-	
-	//double cap = 100;
-	//vector<int> num_ship;
-
-	//for (int i = 10; i <= shipLimit; i += 25)
-	//	num_ship.push_back(i);
-	//for (int sat = 2; sat <= satLimit; sat+=2) {
-	//	for (auto ship: num_ship) {
-	//		double demand = cap*sat*saturate / ship;
-	//		cout << "ship " << ship << " sat " << sat << endl;
-	//		int j = 0;
-	//		double time = 0;
-	//		vector<double> times;
-	//		while (j < round) {
-	//			auto res = fdm(ship, sat, cap, demand, 1, 1);
-	//			if (res.first) {
-	//				time += res.second; j++;
-	//				times.push_back(res.second);
-	//			}
-	//		}
-	//		double average = avg(times);
-	//		file << ship << '\t' << sat<<'\t'<< average<<'\t'<<stand_dev(times,average)<< '\n';
-	//	}
-	//}
-	//file.close();
-	//cout << "done" << endl;
-
-	//---------case 2-----------
-	/*density/sparcity of transmission pairs
-	keep the total load constant, the influencial factor becomes
-	only the number of flows*/
-
-	//ofstream file;
-	//file.open("performance_density_new.txt");
-	//int sat = 10, ship = 100;
-	//double cap = 100;
-	//for (double density = 0.1; density <= 1; density += 0.1) {
-	//	double demand = sat*cap*saturate / (ship*density);
-	//	vector<double> times;
-	//	int j = 0;
-	//	while (j < round) {
-	//		auto res = fdm(ship, sat, cap, demand, 1, density);
-	//		if (res.first) {
-	//		times.push_back( res.second); j++;
-	//		}
-	//	}
-	//	double average = avg(times);
-	//	file << density << '\t' << average <<'\t'<<stand_dev(times,average)<< endl;
-	//	cout << density << endl;
-	//}
-	//file.close();
-	//cout << "done" << endl;
-	//-------case 3---------
-	//connectivity between ship and SATCOM
-	//keep demand constant, factor becomes path diversity
-
-	//ofstream file;
-	//file.open("performance_connect_new.txt");
-	//int sat = 10, ship = 100;
-	//double cap = 100, demand;
-	//for (double conn = 0.1; conn <= 1; conn += 0.1) {
-	//	vector<double> times;
-	//	demand = cap*sat*saturate / ship;
-	//	int j = 0;
-	//	while (j < round) {
-	//		auto res = fdm(ship, sat, cap, demand, conn, 1);
-	//		if (res.first) {
-	//			times.push_back(res.second); j++;
-	//		}
-	//	}
-	//	double average = avg(times);
-	//	file << conn << '\t' << average <<'\t'<<stand_dev(times,average)<< endl;
-	//	cout << conn << endl;
-	//}
-	//file.close();
-	//cout << "done" << endl;
-
-	//---------case 4------------
-	//bool a;
-	//do {
-	//	auto res = fdm(1, 1, 1, 1, 1, 1);
-	//	a = res.first;
-	//} while (!a);
-
-
-	int sat = 10, ship = 100;
-	double cap = 100, demand;
-	round = 1;
-	double* result=new double[3000];
-	for (double conn = 0.3; conn <= 0.3; conn += 0.1) {
-		vector<double> times;
-		demand = cap*sat*saturate / ship;
-		int j = 0;
-		while (j < round) {
-			auto res = fdm(ship, sat, cap, demand, conn, 1, result, 0);
-			if (res.first) {
-				times.push_back(res.second); j++;
-			}
-		}
-		//double average = avg(times);
-		//file << conn << '\t' << average <<'\t'<<stand_dev(times,average)<< endl;
-		//cout << conn << endl;
-		j = 0;
-		while (j < round) {
-			auto res = fdm(ship, sat, cap, demand, conn, 1, result, 1);
-			if (res.first) {
-				times.push_back(res.second); j++;
-			}
-		}
-	}
-
-	delete[] result;
-	cout << "done" << endl;
-
-}
-
-
