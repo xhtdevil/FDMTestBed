@@ -1,5 +1,7 @@
 Instructions on FDM.cpp:
 
+To compile the source file, use g++ -std=c++11  FDM.cpp -o <output_file>
+
 The program provides two ways of input:
 	1. automatically generates random SDN-SAT network (currently not supported)
 	2. reads in config file
