@@ -1,0 +1,4 @@
+net
+dpctl dump-flows
+sh ovs-ofctl dump-flows s1
+pingall
