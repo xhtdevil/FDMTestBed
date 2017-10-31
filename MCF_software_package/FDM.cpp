@@ -3,6 +3,7 @@
 #include<iostream>
 #include <string>
 #include <set>
+#include <algorithm>
 
 int main() {
 
@@ -10,7 +11,7 @@ int main() {
 	cout << "Choose 1 to provide config file\n choose 0 to randomly generate\n";
 	cin >> choice;
 	cin.ignore();
-	
+
 	int n_ship, n_sat, n_host, n_src_host;
 	vector<vector<int>> host_ship_connect;
 	vector<vector<int>> connectivity;
@@ -39,7 +40,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-		
+
 		double prob_of_conn = 0.7;
 		bool random_input = true;
 		srand(time(NULL));
@@ -50,10 +51,10 @@ int main() {
 
 		//matrix with m ships, n satellites, and link info
 
-		
+
 		bool regenerate = true;
 
-		//generate topology and src-dest pairs 
+		//generate topology and src-dest pairs
 		//that are connected through at least one sat
 		while (regenerate) {
 			regenerate = false;
@@ -69,7 +70,7 @@ int main() {
 						link_per_ship++;
 					}
 				}
-				//if a ship has no connection to sat, 
+				//if a ship has no connection to sat,
 				// randomly connect to one
 				if (link_per_ship == 0) {
 					int ind = rand() % n_sat;
@@ -78,7 +79,7 @@ int main() {
 				}
 			}
 
-			//randomly pair up source and dest	
+			//randomly pair up source and dest
 			for (int i = 0; i < n_ship; i++) {
 				vector<int> candidate_dest;
 				for (int j = 0; j < n_sat; j++) {
@@ -198,7 +199,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-		
+
 
 		for (int i = 0; i < n_ship; i++) {
 			int num_host = 0;
@@ -448,7 +449,7 @@ int main() {
 		}
 	}
 
-	
+
 	for(int i = 0; i < nn; i++) {
 		for(int n = 0; n < nn; n ++) {
 			TotReq += Req[i][n];
@@ -460,7 +461,7 @@ int main() {
 
 
 	/*#######################################################
-	##					FDM algorithm					   ## 
+	##					FDM algorithm					   ##
 	#########################################################
 	*/
 
@@ -486,11 +487,11 @@ int main() {
 		Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost, Gtable, Etable);
 		//current delay after superposition
 		CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
+
 		//PreviousDelay = CurrentDelay;
 		//CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
-		
+
+
 		if(Aflag) {
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
@@ -498,8 +499,8 @@ int main() {
 			else
 				Aflag = 1;
 		}
-		
-		//judge whether the problem is feasible 
+
+		//judge whether the problem is feasible
 		//double max_FD_len = 0, min_FD_len = INFINITY;
 		//for (int i = 0; i < nl; i++) {
 		//	if (FDlen[i] > 0) {
@@ -513,11 +514,11 @@ int main() {
 			print = 0;
 			break;
 		}
-		
+
 		//for(i = 0; i < nl; i ++) {
 		//	printf("Gflow[%d] in iteration is %f\n", i,Gflow[i]);
 		//}
-		
+
 	 	//printf("%f\n", PreviousDelay);
 		count++;
 	}
@@ -667,7 +668,7 @@ int main() {
 					else
 						Aflag = 1;
 				}
-				//judge whether the problem is feasible 
+				//judge whether the problem is feasible
 				/*double max_FD_len = 0, min_FD_len = INFINITY;
 				for (int i = 0; i < nl; i++) {
 					if (FDlen[i] > 0) {
@@ -755,4 +756,3 @@ int main() {
 
 	return 0;
 }
-

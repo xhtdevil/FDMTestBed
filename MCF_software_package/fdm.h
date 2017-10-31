@@ -9,14 +9,12 @@
 #include<vector>
 #include<unordered_map>
 #include <string>
-
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
 #define EPSILON 0.0001
 #define DELTA 0.002
-#define max(a,b) (a>b?a:b)
-#define min(a,b) (a>b?b:a)
 #define STEP 0.05
 
 unordered_map<string, string> IPtable;
