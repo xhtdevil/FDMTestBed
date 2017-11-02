@@ -11,7 +11,7 @@ int main() {
 	cout << "Choose 1 to provide config file\n choose 0 to randomly generate\n";
 	cin >> choice;
 	cin.ignore();
-	
+
 	int n_ship, n_sat, n_host, n_src_host;
 	vector<vector<int>> host_ship_connect;
 	vector<vector<int>> connectivity;
@@ -40,7 +40,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-		
+
 		double prob_of_conn = 0.7;
 		bool random_input = true;
 		srand(time(NULL));
@@ -51,10 +51,10 @@ int main() {
 
 		//matrix with m ships, n satellites, and link info
 
-		
+
 		bool regenerate = true;
 
-		//generate topology and src-dest pairs 
+		//generate topology and src-dest pairs
 		//that are connected through at least one sat
 		while (regenerate) {
 			regenerate = false;
@@ -70,7 +70,7 @@ int main() {
 						link_per_ship++;
 					}
 				}
-				//if a ship has no connection to sat, 
+				//if a ship has no connection to sat,
 				// randomly connect to one
 				if (link_per_ship == 0) {
 					int ind = rand() % n_sat;
@@ -79,7 +79,7 @@ int main() {
 				}
 			}
 
-			//randomly pair up source and dest	
+			//randomly pair up source and dest
 			for (int i = 0; i < n_ship; i++) {
 				vector<int> candidate_dest;
 				for (int j = 0; j < n_sat; j++) {
@@ -199,7 +199,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-		
+
 
 		for (int i = 0; i < n_ship; i++) {
 			int num_host = 0;
@@ -357,7 +357,7 @@ int main() {
 	//	v_pairs[help_count] = { { { ship,ports[ship] },{ dest,ports[dest] } },-1 };
 	//	//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
 	//	ports[dest]++; ports[ship]++; help_count++;
-	//}	
+	//}
 
 	//adding ship dest (mirror ship to dest)
 	for (int i = 0; i < n_ship; i++) {
@@ -470,7 +470,7 @@ int main() {
 		}
 	}
 
-	
+
 	for(int i = 0; i < nn; i++) {
 		for(int n = 0; n < nn; n ++) {
 			TotReq += Req[i][n];
@@ -482,7 +482,7 @@ int main() {
 
 
 	/*#######################################################
-	##					FDM algorithm					   ## 
+	##					FDM algorithm					   ##
 	#########################################################
 	*/
 
@@ -508,11 +508,11 @@ int main() {
 		Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost, Gtable, Etable);
 		//current delay after superposition
 		CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
+
 		//PreviousDelay = CurrentDelay;
 		//CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-		
-		
+
+
 		if(Aflag) {
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
@@ -520,8 +520,8 @@ int main() {
 			else
 				Aflag = 1;
 		}
-		
-		//judge whether the problem is feasible 
+
+		//judge whether the problem is feasible
 		//double max_FD_len = 0, min_FD_len = INFINITY;
 		//for (int i = 0; i < nl; i++) {
 		//	if (FDlen[i] > 0) {
@@ -535,17 +535,21 @@ int main() {
 			print = 0;
 			break;
 		}
-		
+
 		//for(i = 0; i < nl; i ++) {
 		//	printf("Gflow[%d] in iteration is %f\n", i,Gflow[i]);
 		//}
-		
+
 	 	//printf("%f\n", PreviousDelay);
 		count++;
 	}
 	if(print) {
 		//output<<("\n");
 		//add IP
+		//print src and dest
+		for(auto it:srcDest){
+			cout<<names[it.first]<<" transmit to "<<names[it.second]<<endl;
+		}
 		unordered_map<string, vector<string>> usedIP;
 		for (int link = 0; link < n_src_host; link++) {
 			int src_node = End1[link];
@@ -573,7 +577,7 @@ int main() {
 		output << "End" << endl;
 		for (int i = 0; i < nl; i++) {
 			if (i < n_src_host) {
-				for (int j = 0; j < usedIP[names[End1[i]]].size(); j++) {
+				for (int j = 0; j < ship_sat[End2[i]-n_host]; j++) {
 					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 				}
 			}
@@ -594,11 +598,14 @@ int main() {
 			auto endpoints = v_pairs[link].first;
 			auto node1 = endpoints.first, node2 = endpoints.second;
 			int src_node = node1.first, src_port = node1.second, dst_node = node2.first, dst_port = node2.second;
+			set<string> to_delete;
 			for (auto it : Gtable[link]) {
 				if (it.second < 1.0e-5){
-					Gtable[link].erase(it.first);
+					to_delete.insert(it.first);
 				}
 			}
+			for(auto it:to_delete)
+				Gtable[link].erase(it);
 			if (Gtable[link].size()==0) continue;
 			output << names[src_node] + "-eth" + to_string(src_port) << " " << names[dst_node] + "-eth" + to_string(dst_port) << "\tnum_of_flow:" << Gtable[link].size() << endl;
 			for (auto it : Gtable[link]) {
@@ -695,7 +702,7 @@ int main() {
 					else
 						Aflag = 1;
 				}
-				//judge whether the problem is feasible 
+				//judge whether the problem is feasible
 				/*double max_FD_len = 0, min_FD_len = INFINITY;
 				for (int i = 0; i < nl; i++) {
 					if (FDlen[i] > 0) {
@@ -783,4 +790,3 @@ int main() {
 
 	return 0;
 }
-
