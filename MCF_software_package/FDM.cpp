@@ -411,7 +411,7 @@ int main() {
 			for (int k = 0; k < ship_sat[i]; k++) {
 				int sat = End2[adj[ship][k]];
 				string key = to_string(host) + " " + to_string(sat);
-				string value = "10.0." + to_string(host) + "." + to_string(k);
+				string value = "10.0." + to_string(host+1) + "." + to_string(k);
 				IPtable[key] = value;
 			}
 		}
@@ -556,11 +556,6 @@ int main() {
 			}
 		}
 
-		//add IP for dest nodes
-		for (int i = 0; i < n_ship; i++) {
-			int dest = host_ship_connect[i].back();
-			usedIP[names[dest]].push_back("10.0." + to_string(dest) + ".0");
-		}
 
 		//output nodes and links in order
 		for (int i = 0; i < nn; i++) {
