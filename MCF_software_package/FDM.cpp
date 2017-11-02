@@ -548,8 +548,9 @@ int main() {
 		//add IP
 		//print src and dest
 		for(auto it:srcDest){
-			cout<<names[it.first]<<" transmit to "<<names[it.second]<<endl;
+			output<<names[it.first]<<" "<<names[it.second]<<" 10.0.0."+to_string(it.second+1)<<endl;
 		}
+		output<<"End"<<endl;
 		unordered_map<string, vector<string>> usedIP;
 		for (int link = 0; link < n_src_host; link++) {
 			int src_node = End1[link];
