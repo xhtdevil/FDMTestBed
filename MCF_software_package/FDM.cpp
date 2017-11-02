@@ -11,7 +11,7 @@ int main() {
 	cout << "Choose 1 to provide config file\n choose 0 to randomly generate\n";
 	cin >> choice;
 	cin.ignore();
-
+	
 	int n_ship, n_sat, n_host, n_src_host;
 	vector<vector<int>> host_ship_connect;
 	vector<vector<int>> connectivity;
@@ -40,7 +40,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-
+		
 		double prob_of_conn = 0.7;
 		bool random_input = true;
 		srand(time(NULL));
@@ -51,10 +51,10 @@ int main() {
 
 		//matrix with m ships, n satellites, and link info
 
-
+		
 		bool regenerate = true;
 
-		//generate topology and src-dest pairs
+		//generate topology and src-dest pairs 
 		//that are connected through at least one sat
 		while (regenerate) {
 			regenerate = false;
@@ -70,7 +70,7 @@ int main() {
 						link_per_ship++;
 					}
 				}
-				//if a ship has no connection to sat,
+				//if a ship has no connection to sat, 
 				// randomly connect to one
 				if (link_per_ship == 0) {
 					int ind = rand() % n_sat;
@@ -79,7 +79,7 @@ int main() {
 				}
 			}
 
-			//randomly pair up source and dest
+			//randomly pair up source and dest	
 			for (int i = 0; i < n_ship; i++) {
 				vector<int> candidate_dest;
 				for (int j = 0; j < n_sat; j++) {
@@ -199,7 +199,7 @@ int main() {
 		sat_capacities.resize(n_sat, 0);
 		downlink_capacities.resize(n_sat, vector<double>(n_ship, 0));
 
-
+		
 
 		for (int i = 0; i < n_ship; i++) {
 			int num_host = 0;
@@ -256,14 +256,17 @@ int main() {
 	##					Topology Builder				   ##
 	#########################################################
 	*/
-	int nn = n_host+n_ship + 3 * n_sat;
+	//int nn = n_host+n_ship + 3 * n_sat;
+	//using mirror topology to prevent loop
+	int nn = n_host + 2 * n_ship + 3 * n_sat;
 	int nl = n_host+2 * count_link + 2*n_sat;
 	ofstream output;
 	output.open("allocation.txt");
 
-	set<int> ships, hubs;
+	set<int> ships, hubs, mirror_ships;
 	for (int i = 0; i < n_ship; i++) {
 		ships.insert(i+n_host);
+		mirror_ships.insert(i + n_host + n_ship + 3 * n_sat);
 	}
 	for (int i = 0; i < n_sat; i++) {
 		hubs.insert(i + n_host + n_ship + n_sat);
@@ -326,29 +329,47 @@ int main() {
 		ports[sat]++; ports[hub]++; help_count++;
 	}
 
-	//adding downlinks
+	//adding downlinks(back to original ships, has loop)
+	//for (int j = 0; j < n_sat; j++) {
+	//	//output << "link between sat " << j << " and ship ";
+	//	for (int i = 0; i < n_ship; i++) {
+	//		if (connectivity[i][j]) {
+	//			int sat = n_host + n_ship + 2 * n_sat + j, ship = n_host + i;
+	//			v_pairs[help_count] = { { {sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
+	//			//output << i << " , ship port:" << ports[ship] << " sat prot:" << ports[sat] << endl;
+	//			ports[sat]++; ports[ship]++; help_count++;
+	//		}
+	//	}
+	//}
+	//adding downlinks(to mirror ships,no loop)
 	for (int j = 0; j < n_sat; j++) {
-		//output << "link between sat " << j << " and ship ";
 		for (int i = 0; i < n_ship; i++) {
 			if (connectivity[i][j]) {
-				int sat = n_host + n_ship + 2 * n_sat + j, ship = n_host + i;
-				v_pairs[help_count] = { { {sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
-				//output << i << " , ship port:" << ports[ship] << " sat prot:" << ports[sat] << endl;
+				int sat = n_host + n_ship + 2 * n_sat + j, ship =n_host+n_ship+3*n_sat+i;
+				v_pairs[help_count] = { {{sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
 				ports[sat]++; ports[ship]++; help_count++;
 			}
 		}
 	}
-	//adding ship dest
+	//adding ship dest (original ship to dest)
+	//for (int i = 0; i < n_ship; i++) {
+	//	int ship = n_host + i, dest = host_ship_connect[i].back();
+	//	v_pairs[help_count] = { { { ship,ports[ship] },{ dest,ports[dest] } },-1 };
+	//	//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
+	//	ports[dest]++; ports[ship]++; help_count++;
+	//}	
+
+	//adding ship dest (mirror ship to dest)
 	for (int i = 0; i < n_ship; i++) {
-		int ship = n_host + i, dest = host_ship_connect[i].back();
-		v_pairs[help_count] = { {{ship,ports[ship]},{dest,ports[dest]}},-1 };
+		int ship = n_host + n_ship + 3 * n_sat + i, dest = host_ship_connect[i].back();
+		v_pairs[help_count] = { { { ship,ports[ship] },{ dest,ports[dest] } },-1 };
 		//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
 		ports[dest]++; ports[ship]++; help_count++;
 	}
 	//adj matrix
 	vector<vector<int>> adj(nn, vector<int>());
 
-	int link = max(n_sat,n_ship);
+	int link = max(n_sat,n_ship)+1;
 	int *End1 = new int[nl], *End2 = new int[nl], **Adj = new int *[nn];
 	for (int i = 0; i < nn; i++) {
 		Adj[i] = new int[link];
@@ -387,7 +408,7 @@ int main() {
 		int ship = n_host + i;
 		for (int j = 0; j < host_ship_connect[i].size() - 1; j++) {
 			int host = host_ship_connect[i][j];
-			for (int k = 0; k < adj[ship].size()-1; k++) {
+			for (int k = 0; k < ship_sat[i]; k++) {
 				int sat = End2[adj[ship][k]];
 				string key = to_string(host) + " " + to_string(sat);
 				string value = "10.0." + to_string(host) + "." + to_string(k);
@@ -449,7 +470,7 @@ int main() {
 		}
 	}
 
-
+	
 	for(int i = 0; i < nn; i++) {
 		for(int n = 0; n < nn; n ++) {
 			TotReq += Req[i][n];
@@ -461,7 +482,7 @@ int main() {
 
 
 	/*#######################################################
-	##					FDM algorithm					   ##
+	##					FDM algorithm					   ## 
 	#########################################################
 	*/
 
@@ -487,11 +508,11 @@ int main() {
 		Superpose(nl, Eflow, Gflow, NewCap, TotReq, MsgLen, Cost, Gtable, Etable);
 		//current delay after superposition
 		CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-
+		
 		//PreviousDelay = CurrentDelay;
 		//CurrentDelay = CalcDelay(nl, Gflow, NewCap, MsgLen, TotReq, Cost);
-
-
+		
+		
 		if(Aflag) {
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
@@ -499,8 +520,8 @@ int main() {
 			else
 				Aflag = 1;
 		}
-
-		//judge whether the problem is feasible
+		
+		//judge whether the problem is feasible 
 		//double max_FD_len = 0, min_FD_len = INFINITY;
 		//for (int i = 0; i < nl; i++) {
 		//	if (FDlen[i] > 0) {
@@ -514,11 +535,11 @@ int main() {
 			print = 0;
 			break;
 		}
-
+		
 		//for(i = 0; i < nl; i ++) {
 		//	printf("Gflow[%d] in iteration is %f\n", i,Gflow[i]);
 		//}
-
+		
 	 	//printf("%f\n", PreviousDelay);
 		count++;
 	}
@@ -535,6 +556,12 @@ int main() {
 			}
 		}
 
+		//add IP for dest nodes
+		for (int i = 0; i < n_ship; i++) {
+			int dest = host_ship_connect[i].back();
+			usedIP[names[dest]].push_back("10.0." + to_string(dest) + ".0");
+		}
+
 		//output nodes and links in order
 		for (int i = 0; i < nn; i++) {
 			if (i < n_host)
@@ -543,30 +570,30 @@ int main() {
 				output << "add ship: " << names[i] << endl;
 			else if (hubs.find(i) != hubs.end())
 				output << "add hub: " << names[i] << endl;
+			else if (mirror_ships.find(i) != mirror_ships.end())
+				output << "add mirror_ship: " << names[i] << endl;
 			else
 				output << "add sat: " << names[i] << endl;
 		}
-		output<<"End"<<endl;
-
+		output << "End" << endl;
 		for (int i = 0; i < nl; i++) {
 			if (i < n_src_host) {
-				int ship=End2[i];
-				for (int j = 0; j < ship_sat[ship-n_host]; j++) {
+				for (int j = 0; j < usedIP[names[End1[i]]].size(); j++) {
 					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 				}
 			}
 			else
 				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 		}
-		output<<"End"<<endl;
+		output << "End" << endl;
 		//printing ip
-		for (int i = 0; i < n_src_host; i++) {
-			string key = names[End1[i]];
+		for (int i = 0; i < n_host; i++) {
+			string key = names[i];
 			output << key << " num_of_ip: " << usedIP[key].size() << endl;
 			for (auto ip : usedIP[key])
 				output << ip << endl;
 		}
-		output<<"End"<<endl;
+		output << "End" << endl;
 		//printing link flow table
 		for (int link = 0; link < nl; link++) {
 			auto endpoints = v_pairs[link].first;
@@ -673,7 +700,7 @@ int main() {
 					else
 						Aflag = 1;
 				}
-				//judge whether the problem is feasible
+				//judge whether the problem is feasible 
 				/*double max_FD_len = 0, min_FD_len = INFINITY;
 				for (int i = 0; i < nl; i++) {
 					if (FDlen[i] > 0) {
@@ -761,3 +788,4 @@ int main() {
 
 	return 0;
 }
+
