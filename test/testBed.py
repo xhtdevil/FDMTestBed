@@ -248,4 +248,4 @@ def WifiNet(inputFile):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("allocation.txt")
+    WifiNet("allocation_old.txt")
