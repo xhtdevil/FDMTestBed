@@ -10,6 +10,7 @@
 #include<unordered_map>
 #include <string>
 #include <algorithm>
+
 #include <iostream>
 using namespace std;
 
@@ -141,7 +142,6 @@ void Superpose(int nl, double Eflow[], double Gflow[], double Cap[], double TotR
 	for (int l = 0; l < nl; l++) {
 		//		Pflow[l] = Gflow[l];
 		Gflow[l] = x*Eflow[l] + (1 - x)*Gflow[l];
-		cout << "Gflow on link " << l << ":" << Gflow[l];
 		double tmp = 0;
 		for (auto it : Gtable[l]) {
 			Gtable[l][it.first] *= (1 - x);
@@ -152,7 +152,6 @@ void Superpose(int nl, double Eflow[], double Gflow[], double Cap[], double TotR
 			Gtable[l][key] += eflow*x;
 			tmp += eflow*x;
 		}
-		cout << "\t\tGtable on link " << l << ":" << tmp << endl;
 	}
 }
 

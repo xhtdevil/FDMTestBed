@@ -256,14 +256,17 @@ int main() {
 	##					Topology Builder				   ##
 	#########################################################
 	*/
-	int nn = n_host+n_ship + 3 * n_sat;
+	//int nn = n_host+n_ship + 3 * n_sat;
+	//using mirror topology to prevent loop
+	int nn = n_host + 2 * n_ship + 3 * n_sat;
 	int nl = n_host+2 * count_link + 2*n_sat;
 	ofstream output;
 	output.open("allocation.txt");
 
-	set<int> ships, hubs;
+	set<int> ships, hubs, mirror_ships;
 	for (int i = 0; i < n_ship; i++) {
 		ships.insert(i+n_host);
+		mirror_ships.insert(i + n_host + n_ship + 3 * n_sat);
 	}
 	for (int i = 0; i < n_sat; i++) {
 		hubs.insert(i + n_host + n_ship + n_sat);
@@ -326,29 +329,47 @@ int main() {
 		ports[sat]++; ports[hub]++; help_count++;
 	}
 
-	//adding downlinks
+	//adding downlinks(back to original ships, has loop)
+	//for (int j = 0; j < n_sat; j++) {
+	//	//output << "link between sat " << j << " and ship ";
+	//	for (int i = 0; i < n_ship; i++) {
+	//		if (connectivity[i][j]) {
+	//			int sat = n_host + n_ship + 2 * n_sat + j, ship = n_host + i;
+	//			v_pairs[help_count] = { { {sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
+	//			//output << i << " , ship port:" << ports[ship] << " sat prot:" << ports[sat] << endl;
+	//			ports[sat]++; ports[ship]++; help_count++;
+	//		}
+	//	}
+	//}
+	//adding downlinks(to mirror ships,no loop)
 	for (int j = 0; j < n_sat; j++) {
-		//output << "link between sat " << j << " and ship ";
 		for (int i = 0; i < n_ship; i++) {
 			if (connectivity[i][j]) {
-				int sat = n_host + n_ship + 2 * n_sat + j, ship = n_host + i;
-				v_pairs[help_count] = { { {sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
-				//output << i << " , ship port:" << ports[ship] << " sat prot:" << ports[sat] << endl;
+				int sat = n_host + n_ship + 2 * n_sat + j, ship =n_host+n_ship+3*n_sat+i;
+				v_pairs[help_count] = { {{sat,ports[sat]}, {ship,ports[ship]}},downlink_capacities[j][i] };
 				ports[sat]++; ports[ship]++; help_count++;
 			}
 		}
 	}
-	//adding ship dest
+	//adding ship dest (original ship to dest)
+	//for (int i = 0; i < n_ship; i++) {
+	//	int ship = n_host + i, dest = host_ship_connect[i].back();
+	//	v_pairs[help_count] = { { { ship,ports[ship] },{ dest,ports[dest] } },-1 };
+	//	//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
+	//	ports[dest]++; ports[ship]++; help_count++;
+	//}
+
+	//adding ship dest (mirror ship to dest)
 	for (int i = 0; i < n_ship; i++) {
-		int ship = n_host + i, dest = host_ship_connect[i].back();
-		v_pairs[help_count] = { {{ship,ports[ship]},{dest,ports[dest]}},-1 };
+		int ship = n_host + n_ship + 3 * n_sat + i, dest = host_ship_connect[i].back();
+		v_pairs[help_count] = { { { ship,ports[ship] },{ dest,ports[dest] } },-1 };
 		//output << "link between ship " << i << " and dest host " << dest << " , ship port:" << ports[ship] << " ,dest port:" << ports[dest] << endl;
 		ports[dest]++; ports[ship]++; help_count++;
 	}
 	//adj matrix
 	vector<vector<int>> adj(nn, vector<int>());
 
-	int link = max(n_sat,n_ship);
+	int link = max(n_sat,n_ship)+1;
 	int *End1 = new int[nl], *End2 = new int[nl], **Adj = new int *[nn];
 	for (int i = 0; i < nn; i++) {
 		Adj[i] = new int[link];
@@ -387,10 +408,10 @@ int main() {
 		int ship = n_host + i;
 		for (int j = 0; j < host_ship_connect[i].size() - 1; j++) {
 			int host = host_ship_connect[i][j];
-			for (int k = 0; k < adj[ship].size()-1; k++) {
+			for (int k = 0; k < ship_sat[i]; k++) {
 				int sat = End2[adj[ship][k]];
 				string key = to_string(host) + " " + to_string(sat);
-				string value = "10.0." + to_string(host) + "." + to_string(k);
+				string value = "10.0." + to_string(host+1) + "." + to_string(k);
 				IPtable[key] = value;
 			}
 		}
@@ -525,6 +546,11 @@ int main() {
 	if(print) {
 		//output<<("\n");
 		//add IP
+		//print src and dest
+		for(auto it:srcDest){
+			output<<names[it.first]<<" "<<names[it.second]<<" 10.0.0."+to_string(it.second+1)<<endl;
+		}
+		output<<"End"<<endl;
 		unordered_map<string, vector<string>> usedIP;
 		for (int link = 0; link < n_src_host; link++) {
 			int src_node = End1[link];
@@ -535,6 +561,7 @@ int main() {
 			}
 		}
 
+
 		//output nodes and links in order
 		for (int i = 0; i < nn; i++) {
 			if (i < n_host)
@@ -543,40 +570,43 @@ int main() {
 				output << "add ship: " << names[i] << endl;
 			else if (hubs.find(i) != hubs.end())
 				output << "add hub: " << names[i] << endl;
+			else if (mirror_ships.find(i) != mirror_ships.end())
+				output << "add mirror_ship: " << names[i] << endl;
 			else
 				output << "add sat: " << names[i] << endl;
 		}
-		output<<"End"<<endl;
-
+		output << "End" << endl;
 		for (int i = 0; i < nl; i++) {
 			if (i < n_src_host) {
-				int ship=End2[i];
-				for (int j = 0; j < ship_sat[ship-n_host]; j++) {
+				for (int j = 0; j < ship_sat[End2[i]-n_host]; j++) {
 					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 				}
 			}
 			else
 				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
 		}
-		output<<"End"<<endl;
+		output << "End" << endl;
 		//printing ip
-		for (int i = 0; i < n_src_host; i++) {
-			string key = names[End1[i]];
+		for (int i = 0; i < n_host; i++) {
+			string key = names[i];
 			output << key << " num_of_ip: " << usedIP[key].size() << endl;
 			for (auto ip : usedIP[key])
 				output << ip << endl;
 		}
-		output<<"End"<<endl;
+		output << "End" << endl;
 		//printing link flow table
 		for (int link = 0; link < nl; link++) {
 			auto endpoints = v_pairs[link].first;
 			auto node1 = endpoints.first, node2 = endpoints.second;
 			int src_node = node1.first, src_port = node1.second, dst_node = node2.first, dst_port = node2.second;
+			set<string> to_delete;
 			for (auto it : Gtable[link]) {
 				if (it.second < 1.0e-5){
-					Gtable[link].erase(it.first);
+					to_delete.insert(it.first);
 				}
 			}
+			for(auto it:to_delete)
+				Gtable[link].erase(it);
 			if (Gtable[link].size()==0) continue;
 			output << names[src_node] + "-eth" + to_string(src_port) << " " << names[dst_node] + "-eth" + to_string(dst_port) << "\tnum_of_flow:" << Gtable[link].size() << endl;
 			for (auto it : Gtable[link]) {
