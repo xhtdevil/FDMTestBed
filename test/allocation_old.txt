@@ -1,0 +1,313 @@
+add host: host0
+add host: host1
+add host: host2
+add host: host3
+add host: host4
+add host: host5
+add host: host6
+add host: host7
+add host: host8
+add host: host9
+add host: host10
+add host: host11
+add host: host12
+add host: host13
+add host: host14
+add ship: s1
+add ship: s2
+add ship: s3
+add ship: s4
+add ship: s5
+add sat: s6
+add sat: s7
+add sat: s8
+add hub: s9
+add hub: s10
+add hub: s11
+add sat: s12
+add sat: s13
+add sat: s14
+End
+add link: host0 s1
+add link: host0 s1
+add link: host0 s1
+add link: host1 s1
+add link: host1 s1
+add link: host1 s1
+add link: host3 s2
+add link: host3 s2
+add link: host3 s2
+add link: host4 s2
+add link: host4 s2
+add link: host4 s2
+add link: host6 s3
+add link: host6 s3
+add link: host7 s3
+add link: host7 s3
+add link: host9 s4
+add link: host9 s4
+add link: host9 s4
+add link: host10 s4
+add link: host10 s4
+add link: host10 s4
+add link: host12 s5
+add link: host12 s5
+add link: host13 s5
+add link: host13 s5
+add link: s1 s6
+add link: s1 s7
+add link: s1 s8
+add link: s2 s6
+add link: s2 s7
+add link: s2 s8
+add link: s3 s7
+add link: s3 s8
+add link: s4 s6
+add link: s4 s7
+add link: s4 s8
+add link: s5 s6
+add link: s5 s8
+add link: s6 s9
+add link: s7 s10
+add link: s8 s11
+add link: s9 s12
+add link: s10 s13
+add link: s11 s14
+add link: s12 s1
+add link: s12 s2
+add link: s12 s4
+add link: s12 s5
+add link: s13 s1
+add link: s13 s2
+add link: s13 s3
+add link: s13 s4
+add link: s14 s1
+add link: s14 s2
+add link: s14 s3
+add link: s14 s4
+add link: s14 s5
+add link: s1 host2
+add link: s2 host5
+add link: s3 host8
+add link: s4 host11
+add link: s5 host14
+End
+host0 num_of_ip: 3
+10.0.0.1
+10.0.0.2
+10.0.0.0
+host1 num_of_ip: 2
+10.0.1.2
+10.0.1.0
+host3 num_of_ip: 3
+10.0.3.1
+10.0.3.2
+10.0.3.0
+host4 num_of_ip: 2
+10.0.4.2
+10.0.4.1
+host6 num_of_ip: 2
+10.0.6.1
+10.0.6.0
+host7 num_of_ip: 2
+10.0.7.1
+10.0.7.0
+host9 num_of_ip: 3
+10.0.9.1
+10.0.9.2
+10.0.9.0
+host10 num_of_ip: 2
+10.0.10.2
+10.0.10.1
+host12 num_of_ip: 2
+10.0.12.1
+10.0.12.0
+host13 num_of_ip: 2
+10.0.13.1
+10.0.13.0
+End
+host0-eth0 s1-eth1	num_of_flow:3
+		10.0.0.1 0.23897
+		10.0.0.2 1.14303
+		10.0.0.0 4.618
+host1-eth0 s1-eth4	num_of_flow:2
+		10.0.1.2 0.897687
+		10.0.1.0 3.10231
+host3-eth0 s2-eth1	num_of_flow:3
+		10.0.3.1 0.278798
+		10.0.3.2 1.33354
+		10.0.3.0 5.38767
+host4-eth0 s2-eth4	num_of_flow:2
+		10.0.4.2 0.583783
+		10.0.4.1 2.41622
+host6-eth0 s3-eth1	num_of_flow:2
+		10.0.6.1 0.778377
+		10.0.6.0 3.22162
+host7-eth0 s3-eth3	num_of_flow:2
+		10.0.7.1 0.778377
+		10.0.7.0 3.22162
+host9-eth0 s4-eth1	num_of_flow:3
+		10.0.9.1 0.119485
+		10.0.9.2 0.571515
+		10.0.9.0 2.309
+host10-eth0 s4-eth4	num_of_flow:2
+		10.0.10.2 0.583783
+		10.0.10.1 2.41622
+host12-eth0 s5-eth1	num_of_flow:2
+		10.0.12.1 0.673265
+		10.0.12.0 2.32673
+host13-eth0 s5-eth3	num_of_flow:2
+		10.0.13.1 0.673265
+		10.0.13.0 2.32673
+s1-eth7 s6-eth1	num_of_flow:2
+		10.0.1.0 3.10231
+		10.0.0.0 4.618
+s1-eth8 s7-eth1	num_of_flow:1
+		10.0.0.1 0.23897
+s1-eth9 s8-eth1	num_of_flow:2
+		10.0.0.2 1.14303
+		10.0.1.2 0.897687
+s2-eth7 s6-eth2	num_of_flow:1
+		10.0.3.0 5.38767
+s2-eth8 s7-eth2	num_of_flow:2
+		10.0.3.1 0.278798
+		10.0.4.1 2.41622
+s2-eth9 s8-eth2	num_of_flow:2
+		10.0.3.2 1.33354
+		10.0.4.2 0.583783
+s3-eth5 s7-eth3	num_of_flow:2
+		10.0.7.0 3.22162
+		10.0.6.0 3.22162
+s3-eth6 s8-eth3	num_of_flow:2
+		10.0.6.1 0.778377
+		10.0.7.1 0.778377
+s4-eth7 s6-eth3	num_of_flow:1
+		10.0.9.0 2.309
+s4-eth8 s7-eth4	num_of_flow:2
+		10.0.9.1 0.119485
+		10.0.10.1 2.41622
+s4-eth9 s8-eth4	num_of_flow:2
+		10.0.9.2 0.571515
+		10.0.10.2 0.583783
+s5-eth5 s6-eth4	num_of_flow:2
+		10.0.13.0 2.32673
+		10.0.12.0 2.32673
+s5-eth6 s8-eth5	num_of_flow:2
+		10.0.12.1 0.673265
+		10.0.13.1 0.673265
+s6-eth5 s9-eth1	num_of_flow:6
+		10.0.13.0 2.32673
+		10.0.12.0 2.32673
+		10.0.9.0 2.309
+		10.0.3.0 5.38767
+		10.0.1.0 3.10231
+		10.0.0.0 4.618
+s7-eth5 s10-eth1	num_of_flow:7
+		10.0.0.1 0.23897
+		10.0.3.1 0.278798
+		10.0.10.1 2.41622
+		10.0.7.0 3.22162
+		10.0.9.1 0.119485
+		10.0.6.0 3.22162
+		10.0.4.1 2.41622
+s8-eth6 s11-eth1	num_of_flow:10
+		10.0.0.2 1.14303
+		10.0.7.1 0.778377
+		10.0.13.1 0.673265
+		10.0.1.2 0.897687
+		10.0.3.2 1.33354
+		10.0.4.2 0.583783
+		10.0.6.1 0.778377
+		10.0.9.2 0.571515
+		10.0.10.2 0.583783
+		10.0.12.1 0.673265
+s9-eth2 s12-eth1	num_of_flow:6
+		10.0.13.0 2.32673
+		10.0.12.0 2.32673
+		10.0.9.0 2.309
+		10.0.3.0 5.38767
+		10.0.1.0 3.10231
+		10.0.0.0 4.618
+s10-eth2 s13-eth1	num_of_flow:7
+		10.0.0.1 0.23897
+		10.0.3.1 0.278798
+		10.0.10.1 2.41622
+		10.0.7.0 3.22162
+		10.0.9.1 0.119485
+		10.0.6.0 3.22162
+		10.0.4.1 2.41622
+s11-eth2 s14-eth1	num_of_flow:10
+		10.0.0.2 1.14303
+		10.0.7.1 0.778377
+		10.0.13.1 0.673265
+		10.0.1.2 0.897687
+		10.0.3.2 1.33354
+		10.0.4.2 0.583783
+		10.0.6.1 0.778377
+		10.0.9.2 0.571515
+		10.0.10.2 0.583783
+		10.0.12.1 0.673265
+s12-eth2 s1-eth10	num_of_flow:2
+		10.0.12.0 2.32673
+		10.0.3.0 5.38767
+s12-eth3 s2-eth10	num_of_flow:1
+		10.0.9.0 2.309
+s12-eth4 s4-eth10	num_of_flow:2
+		10.0.13.0 2.32673
+		10.0.0.0 4.618
+s12-eth5 s5-eth7	num_of_flow:1
+		10.0.1.0 3.10231
+s13-eth2 s1-eth11	num_of_flow:1
+		10.0.3.1 0.278798
+s13-eth3 s2-eth11	num_of_flow:2
+		10.0.9.1 0.119485
+		10.0.6.0 3.22162
+s13-eth4 s3-eth7	num_of_flow:2
+		10.0.10.1 2.41622
+		10.0.4.1 2.41622
+s13-eth5 s4-eth11	num_of_flow:2
+		10.0.0.1 0.23897
+		10.0.7.0 3.22162
+s14-eth2 s1-eth12	num_of_flow:2
+		10.0.3.2 1.33354
+		10.0.12.1 0.673265
+s14-eth3 s2-eth12	num_of_flow:2
+		10.0.6.1 0.778377
+		10.0.9.2 0.571515
+s14-eth4 s3-eth8	num_of_flow:2
+		10.0.4.2 0.583783
+		10.0.10.2 0.583783
+s14-eth5 s4-eth12	num_of_flow:3
+		10.0.0.2 1.14303
+		10.0.7.1 0.778377
+		10.0.13.1 0.673265
+s14-eth6 s5-eth8	num_of_flow:1
+		10.0.1.2 0.897687
+s1-eth13 host2-eth0	num_of_flow:5
+		10.0.3.1 0.278798
+		10.0.3.2 1.33354
+		10.0.12.1 0.673265
+		10.0.12.0 2.32673
+		10.0.3.0 5.38767
+s2-eth13 host5-eth0	num_of_flow:5
+		10.0.6.1 0.778377
+		10.0.9.2 0.571515
+		10.0.9.0 2.309
+		10.0.9.1 0.119485
+		10.0.6.0 3.22162
+s3-eth9 host8-eth0	num_of_flow:4
+		10.0.4.2 0.583783
+		10.0.10.2 0.583783
+		10.0.10.1 2.41622
+		10.0.4.1 2.41622
+s4-eth13 host11-eth0	num_of_flow:7
+		10.0.0.1 0.23897
+		10.0.0.2 1.14303
+		10.0.7.1 0.778377
+		10.0.13.1 0.673265
+		10.0.13.0 2.32673
+		10.0.7.0 3.22162
+		10.0.0.0 4.618
+s5-eth9 host14-eth0	num_of_flow:2
+		10.0.1.2 0.897687
+		10.0.1.0 3.10231
