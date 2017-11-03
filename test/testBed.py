@@ -11,70 +11,15 @@ import sys, time
 flush=sys.stdout.flush
 import os.path, string
 
-# Flow: IP, Links, rate
-# Link: src, dst, srceth, dsteth,
-# class Flow:
-#     def __init__(self):
-#         self.ip = []
-#         self.links = []
-#         self.rate = []
-# class Link:
-#     def __init__(self):
-#         self.src = []
-#         self.dst = []
-
-# class cd:
-#     """Context manager for changing the current working directory"""
-#     def __init__(self, newPath):
-#         self.newPath = os.path.expanduser(newPath)
-#
-#     def _x_enter__(self):
-#         self.savedPath = os.getcwd()
-#         os.chdir(self.newPath)
-#
-#     def __exit__(self, etype, value, traceback):
-#         os.chdir(self.savedPath)
-
-
 def WifiNet(inputFile):
     input = open(inputFile, "r")
-    # l = input.readline()
-    # linkConfig = []
-    # arg = l.strip().split(",")
-    # n = int(arg[0])
-    # m = int(arg[1])
     """ Node names """
     max_outgoing = []
     hosts = []
     switches = []  # satellite and dummy satellite
     links = []
-    sw_name = []
-    portCount = {} # count the current eth usage of a host/switch
-    linkToPort = {} # map link to certain ethernets of src and dst
-
-    # for i in range(1, 16):
-    #     sw_name.append('0'+hex(i)[-1])
-    # for i in range(16, 60):
-    #     sw_name.append(hex(i)[-2:])
-    # for i in range(0, n):
-    #     hosts.append('h' + str(i))
-    #     portCount['h' + str(i)] = 0
-    # for i in range(0, m):  # satellite
-    #     switches.append('s'+str(i))
-    #     portCount['s' + str(i)] = 1
-    # for i in range(0, m):  # dummy satellite
-    #     switches.append('dummy_s'+str(i))
-    #     portCount['dummy_s' + str(i)] = 2  # one port for satellite-dummy_satellite
-    # for i in range(0, m):  # hubs between uplink & downlink
-    #     switches.append('hub' + str(i))
-
 
     flows = []
-    routingConfig = []
-    # for i in range(0, n):
-    #     file = open("h" + str(i) + ".sh", "w")
-    #     file.write("#!/bin/bash\n\n")
-    #     routingConfig.append(file)
     queueConfig = open("FDMQueueConfig.sh", "w")
     flowTableConfig = open("FDMFlowTableConfig.sh", "w")
     queueConfig.write("#!/bin/bash\n\n")
@@ -100,6 +45,7 @@ def WifiNet(inputFile):
             switches.append(target)
         line = input.readline()
 
+    num_src = num_host / num_ship - 1
     # Add links
     line = input.readline()
     while line.strip() != "End":
@@ -109,7 +55,9 @@ def WifiNet(inputFile):
         links.append([end1, end2])
         line = input.readline()
 
+    # connection numbers of each ship
     print(max_outgoing)
+
     # Routing table of hosts
     line = input.readline()
     while line.strip() != "End":
@@ -131,9 +79,16 @@ def WifiNet(inputFile):
 
     # Flow table and queue
     queue_num = 1
+    num_input_from_host = []
+    for i in range(0, len(max_outgoing)):
+        output_num = ""
+        for j in range(1, num_src * max_outgoing[i]):
+            output_num = output_num + str(j) + ","
+        output_num = output_num + str(num_src * max_outgoing[i])
+        num_input_from_host.append(output_num)
+
     line = input.readline()
     while line:
-        # print(line)
         end1, end2, num_flow = line.strip().split()
         num_flow = num_flow.strip().split(":")[1]
 
@@ -148,26 +103,51 @@ def WifiNet(inputFile):
 
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
-                for i in range(0, int(num_flow)):
+                commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
+                queue_nums = []
+                rates = []
+                ipaddrs = []
+                for i in range(0, int(num_flow) - 1):
                     ipaddr, rate = input.readline().strip().split()
-                    commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 queues:" + str(queue_num) + "=@q" + str(queue_num) + " -- --id=@q" + str(queue_num) + " create Queue other-config:min-rate=" + str(int(float(rate) * 1000000)) + " other-config:max-rate=" + str(int(float(rate) * 1000000))
-                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,nw_src=" + ipaddr + "/32,actions=set_queue:" + str(queue_num) + ",output:" + index_intf
-                    queueConfig.write(commandQueue + "\n")
-                    flowTableConfig.write(commandFlowTable + "\n")
-                    queue_num = queue_num + 1
+                    rates.append(rate)
+                    ipaddrs.append(ipaddr)
+                    queue_nums.append(queue_num)
+                    commandQueue += "queues:" + str(queue_num) + "=@q" + str(queue_num) + " "
+                    queue_num += 1
+                ipaddr, rate = input.readline().strip().split()
+                rates.append(rate)
+                ipaddrs.append(ipaddr)
+                queue_nums.append(queue_num)
+                commandQueue += "queues:" + str(queue_num) + "=@q" + str(queue_num) + " -- "
+                queue_num += 1
 
-                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                for i in range(0, int(num_flow) - 1):
+                    commandQueue += " --id=@q" + str(queue_nums[i]) + " create Queue other-config:min-rate=" + str(int(float(rates[i]) * 1000000)) + " other-config:max-rate=" + str(int(float(rates[i]) * 1000000)) + " -- "
+                commandQueue += " --id=@q" + str(queue_nums[len(queue_nums) - 1]) + " create Queue other-config:min-rate=" + str(int(float(rates[len(queue_nums) - 1]) * 1000000)) + " other-config:max-rate=" + str(int(float(rates[len(queue_nums) - 1]) * 1000000))
+                queueConfig.write(commandQueue + "\n")
+
+                for i in range(0, int(num_flow)):
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,nw_src=" + ipaddrs[i] + "/32,actions=set_queue:" + str(queue_nums[i]) + ",output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " arp,nw_src=" + ipaddrs[i] + "/32,actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=output:" + num_input_from_host[index_switch - 1]
                 flowTableConfig.write(commandFlowTable + "\n")
+
             elif index_switch <= num_ship:
                 # ship to host downlink
                 # port forwarding
                 for i in range(0, int(num_flow)):
                     input.readline()
+                total_input = ""
                 for i in range(0, int(max_outgoing[index_switch - 1])):
-                    # ipaddr, rate = input.readline().strip().split()
                     commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + str(int(index_intf) - i - 1) + ",actions=output:" + index_intf
                     flowTableConfig.write(commandFlowTable + "\n")
-                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                    if i != int(max_outgoing[index_switch - 1]) - 1:
+                        total_input = total_input + str(int(index_intf) - i - 1) + ","
+                    else :
+                        total_input = total_input + str(int(index_intf) - i - 1)
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=" + total_input
                 flowTableConfig.write(commandFlowTable + "\n")
 
             elif index_switch <= num_ship + num_sat * 2:
@@ -176,73 +156,28 @@ def WifiNet(inputFile):
                 for i in range(0, int(num_flow)):
                     input.readline()
                 for i in range(1, int(index_intf)):
-                    # ipaddr, rate = input.readline().strip().split()
                     commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + str(i) + ",actions=output:" + index_intf
                     flowTableConfig.write(commandFlowTable + "\n")
                 commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
                 flowTableConfig.write(commandFlowTable + "\n")
+
             else:
                 # dummy to ship, ip forwarding
                 for i in range(0, int(num_flow)):
                     ipaddr, rate = input.readline().strip().split()
                     commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,nw_src=" + ipaddr + "/32,actions=output:" + index_intf
                     flowTableConfig.write(commandFlowTable + "\n")
-                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,in_port="  + index_intf + ",nw_dst=" + ipaddr + "/32,actions=output:1"
+                    flowTableConfig.write(commandFlowTable + "\n")
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " arp,nw_src=" + ipaddr + "/32,actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " arp,in_port=" + index_intf + ",actions=output:1"
                 flowTableConfig.write(commandFlowTable + "\n")
-        line = input.readline()
-    # for l in input.readlines():
-    #     link_num, end1, end2, usage = l.strip().split(",")
-    #     end1 = int(end1)
-    #     end2 = int(end2)
-    #     usage = float(usage)
-    #     if usage != 0 and (end1 < n or end1 >= n + m):
-    #         flow = Flow()
-    #         if end1 < n:
-    #             if end1 >= len(linkConfig):
-    #                 linkConfig.append([])
-    #             linkConfig[end1].append(end2 - n)
-    #             flow.src = 'h' + str(end1)
-    #             flow.dst = 's' + str(end2 - n)
-    #         if end1 >= n + m:
-    #             flow.src = 'dummy_s' + str(end1 - n - m)
-    #             flow.dst = 'h' + str(end2)
-    #         flow.srceth = 'eth' + str(portCount[flow.src])
-    #         flow.dsteth = 'eth' + str(portCount[flow.dst])
-    #         flow.usage = usage
-    #         flow.ip = "10.0." + str(end1) + '.' + str(portMap[flow.src])
-    #         print("ip: " + flow.ip + " src: " + flow.src + " dst: " + flow.dst + " srceth:" + flow.srceth +  " dsteth:" + flow.dsteth +" usage:" + str(flow.usage))
-    #         portCount[flow.src] += 1
-    #         portCount[flow.dst] += 1
-    #         if end1 < n:
-    #             commandQueue = "sudo ovs-vsctl -- set Port " + flow.dst + "-" + flow.dsteth + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 queues:" + str(queue_Num) + "=@q" + str(queue_Num) + " -- --id=@q" + str(queue_Num) + " create Queue other-config:min-rate=" + str(int(flow.usage * 1000000)) + " other-config:max-rate=" + str(int(flow.usage * 1000000))
-    #             commandFlowTable = "sudo ovs-ofctl add-flow " + flow.dst + " ip,nw_src=" + flow.ip + "/32,actions=set_queue:" + str(queue_Num) + ",output:" + flow.dsteth[-1:]
-    #         if end1 >= n + m:
-    #             commandQueue = "sudo ovs-vsctl -- set Port " + flow.src + "-" + flow.srceth + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 queues:" + str(queue_Num) + "=@q" + str(queue_Num) + " -- --id=@q" + str(queue_Num) + " create Queue other-config:min-rate=" + str(int(flow.usage * 1000000)) + " other-config:max-rate=" + str(int(flow.usage * 1000000))
-    #             commandFlowTable = "sudo ovs-ofctl add-flow " + flow.src + " ip,nw_src=" + flow.ip + "/32,actions=set_queue:" + str(queue_Num) + ",output:" + flow.srceth[-1:]
-    #
-    #         queueConfig.write(commandQueue + "\n")
-    #         flowTableConfig.write(commandFlowTable + "\n")
-    #         if end1 < n:
-    #             commandRouting = "ifconfig " + flow.src + "-" + flow.srceth + " " + flow.ip + " netmask 255.255.255.255"
-    #             routingConfig[end1].write(commandRouting + "\n")
-    #             commandRouting = "ip rule add from " + flow.ip + " table " + str(int(flow.srceth[-1:]) + 1)
-    #             routingConfig[end1].write(commandRouting + "\n")
-    #             commandRouting = "ip route add default via " + flow.ip + " dev " + flow.src + "-" + flow.srceth + " table " + str(int(flow.srceth[-1:]) + 1)
-    #             routingConfig[end1].write(commandRouting + "\n")
-    #             if flow.srceth == "eth0":
-    #                 commandRouting = "ip route add default scope global nexthop via " + flow.ip + " dev " + flow.src + "-" + flow.srceth
-    #                 routingConfig[end1].write(commandRouting + "\n")
-    #         queue_Num += 1
-    #         flows.append(flow)
 
-    # for i in range(0, n):
-    #     routingConfig[i].close()
-    #     call(["sudo", "chmod", "777", hosts[i] + ".sh"])
+        line = input.readline()
+
     for i in range(0, num_ship):
         queueConfig.write("sudo ovs-ofctl -O Openflow13 queue-stats s" + str(i + 1) + "\n")
-
-    for i in range(0, num_ship + 3 * num_sat):
-        flowTableConfig.write("sudo ovs-ofctl add-flow s" + str(i + 1) + " priority=100,actions=normal\n")
 
     flowTableConfig.close()
     queueConfig.close()
@@ -272,6 +207,8 @@ def WifiNet(inputFile):
     """ Start the simulation """
     info('*** Starting network ***\n')
     net.start()
+
+    time.sleep(3)
 
     #  set all ships
     for i in range(0,num_host):
@@ -312,4 +249,3 @@ def WifiNet(inputFile):
 if __name__ == '__main__':
     setLogLevel('info')
     WifiNet("allocation.txt")
-    #WifiNet(30,3,"127.0.0.1",[2.0]*30,[30,20,30],120)
