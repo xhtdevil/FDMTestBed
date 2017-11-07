@@ -1,15 +1,17 @@
-Instructions on FDM.cpp:
+Instructions on FDM.cpp and FDM_hub.cpp:
 
-To compile the source file, use g++ -std=c++11  FDM.cpp -o <output_file>
+FDM.cpp is for testcase 4-6, FDM_hub.cpp is for other 7 testcases.
+To compile the source file, use g++ -std=c++11  FDM.cpp -o <output_file>, or g++ -std=c++11  FDM_hub.cpp -o <output_file>
 
 The program reads in config file to build the network topology and request matrix.
 
-1. Two options for the topology of testcase4, loop or no loop (using mirror ship for destination host):
+1. Two options for FDM.cpp, loop or no loop (using mirror ship for destination host):
 	the two options should be passed to different .py file, i.e. testBed.py or testBed_noloop.py.
-1. Provide the file name of config file, e.g. testcase_4.txt.
-2. Specify the output file and path, e.g. ../test/allocation.txt or ../test/testcase4/allocation.txt.
+	FDM_hub.cpp has no loop in the topology, so using no loop option by default.
+2. Provide the file name of config file, e.g. testcase_4.txt.
+3. Specify the output file and path, e.g. ../test/allocation.txt or ../test/testcase4/allocation.txt.
 
-The format of config file is as follows:
+For FDM.cpp, the format of config file is as follows:
 
 	The first line has 2 parameters, number of ship (nship) and number of satellite (nsat)
 	The second line has nship parameters, each parameter is the total number of hosts connected to each ship:
@@ -32,9 +34,13 @@ The format of config file is as follows:
 	Final lines are nsat x nship matrix of non-negative numbers, specifying the downlink capacities between satellite (row) and ship (col),
 		0 means there is no downlink between a satellite and ship.
 
-	An example of config file is provided: "config_new.txt".
+	An example of config file is provided: "testcase_4.txt".
 
-	Results are output to "allocation.txt". The format of "allocation.txt" is as follows:
+The format of config file for FDM_hub.cpp is similar, with the following differences:
+	Since the destination is a common hub, the n_srchost x 3 request matrix is now n_srchost x 2 matrix, fixing destination as the hub
+	THe downlink capacities are no longer nsat x nship matrix. It is now a 1x nsat vector.
+
+	Results are output to e.g. "allocation.txt". The format of "allocation.txt" is as follows:
 		First print source host , destination host, destination host ip;
 		Then add host, ship, sat, hub, sat
 		Then add link between nodes
