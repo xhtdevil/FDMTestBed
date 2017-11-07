@@ -2,12 +2,14 @@ Instructions on FDM.cpp:
 
 To compile the source file, use g++ -std=c++11  FDM.cpp -o <output_file>
 
-The program provides two ways of input:
-	1. automatically generates random SDN-SAT network (currently not supported)
-	2. reads in config file
+The program reads in config file to build the network topology and request matrix.
 
-2.  To feed the program with a config file, one must choose 1 in the console and provide the file name of config file.
-	The format of config file is as follows:
+1. Two options for the topology of testcase4, loop or no loop (using mirror ship for destination host):
+	the two options should be passed to different .py file, i.e. testBed.py or testBed_noloop.py.
+1. Provide the file name of config file, e.g. testcase_4.txt.
+2. Specify the output file and path, e.g. ../test/allocation.txt or ../test/testcase4/allocation.txt.
+
+The format of config file is as follows:
 
 	The first line has 2 parameters, number of ship (nship) and number of satellite (nsat)
 	The second line has nship parameters, each parameter is the total number of hosts connected to each ship:
@@ -33,7 +35,8 @@ The program provides two ways of input:
 	An example of config file is provided: "config_new.txt".
 
 	Results are output to "allocation.txt". The format of "allocation.txt" is as follows:
-		First add host, ship, sat, hub, sat
+		First print source host , destination host, destination host ip;
+		Then add host, ship, sat, hub, sat
 		Then add link between nodes
 		Then print the IP usage of each source host
 		Finally print the flows on each link:
