@@ -1,3 +1,0 @@
-/Users/haotianxu/Desktop/GSR/beginner_material/MCF_software_package/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/haotianxu/Desktop/GSR/beginner_material/MCF_software_package/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/haotianxu/Desktop/GSR/beginner_material/MCF_software_package/cmake-build-debug/CMakeFiles/MCF_software_package.dir

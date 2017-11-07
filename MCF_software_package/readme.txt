@@ -9,7 +9,7 @@ The program reads in config file to build the network topology and request matri
 	the two options should be passed to different .py file, i.e. testBed.py or testBed_noloop.py.
 	FDM_hub.cpp has no loop in the topology, so using no loop option by default.
 2. Provide the file name of config file, e.g. testcase_4.txt.
-3. Specify the output file and path, e.g. ../test/allocation.txt or ../test/testcase4/allocation.txt.
+3. Specify the output file and path, e.g. ../testcase4-6_loop/allocation.txt or ../test/testcase4-6_noloop/allocation.txt.
 
 For FDM.cpp, the format of config file is as follows:
 
