@@ -1,2 +1,4 @@
 # FDMTestBed
-TestBed for SDN-SATCOMM
+You can find the FDM algorithm, input and output for the algorithm and explanations in MCF_software_package. Pseudo code can help you quickly understand FDM algorithm when you are reading the raw c++ code and readme in the directory explains how codes work in different kinds of topologies.
+
+In test directory, there are three kinds of topologies or test cases are considered. Test case 4-6, which are host-host cases, are implemented in both loop and no loop topologies so they are splitted into testcase4-6_loop and testcase4-6_noloop. Other test cases, which are host-hub cases, can be tested with testcase_hub. Mininet simulated network, flowtable configuration and queue configuration are setup automatically with the python script in each conditions as long as allocation.txt is given in the correct format from FDM algorithm code. Ping and iperf are also tested by the testbed. 
