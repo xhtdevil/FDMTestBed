@@ -96,3 +96,5 @@ for link in links:
     else:
         net.addLink(node1, node2)
  ```
+
+With bandwidth constraint, we can see the host is sending MPTCP.
