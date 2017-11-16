@@ -30,3 +30,47 @@ Follow those steps to run a simple bw testing between host0 and host11 in minine
 The content of the decoded logs is shown as follows.
 
 ![](https://github.com/rockwellcollins/FDMTestBed/blob/rockwellcollins-patch-3/testcase4/raw/logfile.png?raw=true)
+
+### Special Reminder
+OVS and the host running mininet share the same folder, so before using python API to gengeate D-ITG commands, make sure the names of different testing do not overlap.
+
+## How to write a generator with D-ITG using Python?
+From the original Python testbed, we can add code belows:
+
+According to testcase 4, we have:
+
+* start the servers 
+```
+# start D-ITG Servers
+for i in [2,5,8,11,14]:
+    srv = nodes[hosts[i]]
+    info("starting D-ITG servers...\n")
+    srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+    srv.cmdPrint("./ITGRecv &")
+```
+* start the clients
+```    
+# start D-ITG application
+# set simulation time
+sTime = 120000 # default Simulation Time: 120,000ms
+for i in range(0,10):
+    senderList = [0,1,3,4,6,7,9,10,12,13] # sender list
+    recvList = [11,14,2,8,5,11,5,8,2,11] # receiver list
+    bwReq = [6,4,7,3,4,4,3,3,3,3] # bandwidth requirement in testcase 4
+    ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
+    time.sleep(0.2)
+    info("running simulaiton...\n")
+ ```
+Here, we use bandwidth with ```bwReq[i]*125``` to convert MBytes to kbits.
+
+* the ```ITGTest()``` function, we have:
+```
+def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
+    src = nodes[hosts[srcNo]] # source node
+    dst = nodes[hosts[dstNo]] # destination node
+    info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
+```
+With ```ITGTest()```, we can have log files named like ```receiver*ss*.log```, where the first ```*``` stands for sender's node number and the second for receiver's.
+
