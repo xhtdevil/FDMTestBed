@@ -105,9 +105,12 @@ We can use ```mininet > host0 watch -n 1 '-netstat -n'``` to monitor host status
 ## Decode Logs and Aggregate Information
 Now we have run the testbed and get a btunch of log files in ```~/D-ITG-2.8.1-r1023/bin```. It's time to run analysis to decode those logs on receivers and aggregate the information that we need.
 
-The analysis script is on ```/testcase4/analysis/analysis.py```. The Python script takes the logs on receivers as input (why receivers: sender's logs do not have delay analysis, obviously), and deoded txts and ```result.csv``` as output. Result.csv contains information of the D-ITG testing. Although we only used average bitrate, average delay and delay sd as creterias, we still leave some other parameters that may be useful for further analysis.
+The analysis script is on ```/testcase4/analysis/analysis.py```, and should be placed at ```~/```. The Python script takes the logs on receivers as input (why receivers: sender's logs do not have delay analysis, obviously), and deoded txts and ```result.csv``` as output. 
 
+If you take a quick look at the ```analysis.py```, you can find two functions: ```extractStat(sndList, recvList)``` and ```statAnalysis(sndList, recvList)```. The first one decodes the logs and the second aggregate information of various sender-receiver pairs.
 
+Result.csv contains information of the D-ITG testing. Although we only used average bitrate, average delay and delay sd as creterias, we still leave some other parameters that may be useful for further analysis. 
+For reference, every row in the csv file stands for : ```"total_time","total_packets","min_delay","max_delay","avg_delay","avg_jitter","sd_delay","avg_bit_rate","avg_pkt_rate"```.
 
 ## Anyway, if I want to run the performance testing as soon as possible, what should I do?
 That's a very good question! In fact, all the information above is not neseccary for doing performance testing, but very useful when you want to modify the code or debug.
