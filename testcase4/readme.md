@@ -114,12 +114,33 @@ Result.csv contains information of the D-ITG testing. Although we only used aver
 For reference, every row in the csv file stands for : ```"total_time","total_packets","min_delay","max_delay","avg_delay","avg_jitter","sd_delay","avg_bit_rate","avg_pkt_rate"```.
 
 ### Plot with R Files
-```analysis109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones.
+```analysis109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones. When you run R on your cmputer, rumember to change working directory to folder that contains ```result.csv```.
 
 ## Anyway, if I want to run the performance testing as soon as possible, what should I do?
 That's a very good question! In fact, all the information above is not neseccary for doing performance testing, but very useful when you want to modify the code or debug.
 
-First we should know what is useful and where to place the files.
-* 
+First we should know what is useful and where to place those files.
+
+Below three folers contains three scenarios of MPTCP, Single TCP and FDM
+* ```/multi``` contains files for MPTCP testings
+* ```/single``` contains files for Single TCP testings
+* ```/FDM``` contains files for FDM testings
+
+Below folder contains analysis codes
+* ```/analysis```
+* the ```analysis.py``` should be placed at ```~/D-ITG-2.8.1-r1023/bin```
+* the working directory of ```analysis1109.R``` should be changed to folder that contains ```result.csv``` before running.
+
+Now we do Single TCP Testings:
+* ```$ sudo python ~/FOO/single/SingleTCPtestbed.py```
+* wait for 2 minutes until ```mininet > ``` appears
+* change to ```~/D-ITG-2.8.1-r1023/bin```
+* run ```python analysis.py```
+* move the ```result.csv``` to ```~/FOO```
+* open ```analysis1109.R```, ```setwd("~/FOO")```
+* run ```analysis1109.R```, the result should appear on CLI and plots should be in ```~/FOO```
+
+You can also run the rest two cases similarly :)
+
 ## Discussion:Lessons Learned(前车之鉴 in Chinese)
 //TODO
