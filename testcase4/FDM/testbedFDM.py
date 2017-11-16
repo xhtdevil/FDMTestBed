@@ -271,9 +271,9 @@ def WifiNet(inputFile):
         ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
         time.sleep(0.2)
     info("running simulaiton...\n")
-    #info("please wait...\n")
+    info("please wait...\n")
     
-    #time.sleep(sTime/1000)
+    time.sleep(sTime/1000)
     
     
     CLI(net)
