@@ -35,6 +35,7 @@ The content of the decoded logs is shown as follows.
 OVS and the host running mininet share the same folder, so before using python API to gengeate D-ITG commands, make sure the names of different testing do not overlap.
 
 ## How to write a generator with D-ITG using Python?
+### Add D-ITG commandlines to testbed
 From the original Python testbed, we can add code belows:
 
 According to testcase 4, we have:
@@ -74,3 +75,24 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 ```
 With ```ITGTest()```, we can have log files named like ```receiver*ss*.log```, where the first ```*``` stands for sender's node number and the second for receiver's.
 
+### With traffic generator, do we still need to add bw to links?
+The answer is yes!
+
+Without bw constraint, the D-ITG client would only send single path with one IP address in MPTCP testing. So we still need to add bw constraint to links.
+
+According to testcase 4, we have:
+
+```
+""" Add links """
+for link in links:
+    name1, name2 = link[0], link[1]
+    node1, node2 = nodes[name1], nodes[name2]
+    if(name1 == 's6' and name2 == 's9'):
+        net.addLink(node1, node2, bw = 30)
+    elif(name1 == 's7' and name2 == 's10'):
+        net.addLink(node1, node2, bw = 20)
+    elif (name1 == 's8' and name2 == 's11'):
+        net.addLink(node1, node2, bw = 15)
+    else:
+        net.addLink(node1, node2)
+ ```
