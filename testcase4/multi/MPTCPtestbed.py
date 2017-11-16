@@ -148,9 +148,7 @@ def WifiNet(inputFile):
     info("running simulaiton...\n")
     info("please wait...\n")
 
-
-    
-    #time.sleep(sTime/1000)
+    time.sleep(sTime/1000)
 
     CLI(net)
 
