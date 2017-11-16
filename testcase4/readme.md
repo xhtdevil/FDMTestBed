@@ -140,7 +140,7 @@ Now we do Single TCP Testings:
 * open ```analysis1109.R```, ```setwd("~/FOO")```
 * run ```analysis1109.R```, the result should appear on CLI and plots should be in ```~/FOO```
 
-You can also run the rest two cases similarly :)
+You can also run the rest two cases similarly : )
 
 ## Discussion: Lessons Learned(前车之鉴 in Chinese)
 //TODO
