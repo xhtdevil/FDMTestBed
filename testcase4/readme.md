@@ -35,8 +35,10 @@ The content of the decoded logs is shown as follows.
 OVS and the host running mininet share the same folder, so before using python API to gengeate D-ITG commands, make sure the names of different testing do not overlap.
 
 ## How to write a generator with D-ITG using Python?
+It's time to modify the orginal testbed and run some testings! But how should we do?
+
 ### Add D-ITG commandlines to testbed
-From the original Python testbed, we can add code belows:
+From the original Python testbed, we can add code shown below:
 
 According to testcase 4, we have:
 
@@ -62,7 +64,7 @@ for i in range(0,10):
     time.sleep(0.2)
     info("running simulaiton...\n")
  ```
-Here, we use bandwidth with ```bwReq[i]*125``` to convert MBytes to kbits.
+Here, we use bandwidth with ```bwReq[i]*125``` to convert Mbits to kbytes.
 
 * the ```ITGTest()``` function, we have:
 ```
@@ -73,7 +75,7 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
     src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
 ```
-With ```ITGTest()```, we can have log files named like ```receiver*ss*.log```, where the first ```*``` stands for sender's node number and the second for receiver's.
+With ```ITGTest()```, we can have log files named like ```receiver*ss*.log```, where the first ```*``` stands for sender's node number and the second for receiver's. And we can note that those logs files are located at ```~/D-ITG-2.8.1-r1023/bin```.
 
 ### With traffic generator, do we still need to add bw to links?
 The answer is yes!
@@ -97,4 +99,17 @@ for link in links:
         net.addLink(node1, node2)
  ```
 
-With bandwidth constraint, we can see the host is sending MPTCP.
+We can use ```mininet > host0 watch -n 1 '-netstat -n'``` to monitor host status. Below is a capture of netstat of host0 when running MPTCP. With bandwidth constraint, we can see the host is sending TCP messages using multi IPs. 
+![](https://github.com/rockwellcollins/FDMTestBed/blob/rockwellcollins-patch-3/testcase4/raw/cap.PNG?raw=true)
+
+## Decode Logs and Aggregate Information
+Now we have run the testbed and get a btunch of log files in ```~/D-ITG-2.8.1-r1023/bin```. It's time to run analysis to decode those logs on receivers and aggregate the information that we need.
+
+The analysis script is on ```/testcase4/analysis/analysis.py```. The Python script takes the logs on receivers as input (why receivers: sender's logs do not have delay analysis, obviously), and deoded txts and ```result.csv``` as output. Result.csv contains information of the D-ITG testing. Although we only used average bitrate, average delay and delay sd as creterias, we still leave some other parameters that may be useful for further analysis.
+
+
+
+## Anyway, if I want to run the performance testing as soon as possible, what should I do?
+That's a very good question! In fact, all the information above is not neseccary for doing performance testing, but very useful when you want to modify the code or debug.
+
+## Discussion:前车之鉴
