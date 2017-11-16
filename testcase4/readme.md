@@ -28,3 +28,4 @@ Follow those steps to run a simple bw testing between host0 and host11 in minine
 * The command in STEP4 says, host0 should send TCP packets to 10.0.0.12, with 1000bit packet, 200 packets per second, and send those packets continuously for 150000ms, the sender(client)'s log is saved as ```sender.log``` while the receiver(server)'s log is saved as ```receiver.log```.
 * Decode the receiver's log with ```./ITGDec receiver.log > receiver.txt``` to save the information decoded as txt files.
 The content of the decoded logs is shown as follows.
+![ss](https://github.com/rockwellcollins/FDMTestBed/testcase4/raw/logfile.png)
