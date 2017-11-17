@@ -1,22 +1,29 @@
-//	Created by Wenxuan Mao on 11/12/17
-// 	SingleTCP.java
-
-package singleTCP;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package singletcp;
 import java.util.*;
 import java.io.*;
-
+/**
+ *
+ * @author maowenxuan && liuxin
+ */
 public class SingleTCP {
 
-	public static void main(String[] args) {
-
-		//take argument as filename
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        //take argument as filename
 		if (args.length<1 || args.length > 1){
 			System.out.println("Usage: 1 argument. Filename of config");
 			System.exit(-1);
 		}
 			
-		String fn = args[0].trim();
-		File f = new File(fn);
+//		String fn = args[0].trim();
+		File f = new File("testcase_1.txt");
 		
 		Scanner sc = null;
 		try{
@@ -24,7 +31,7 @@ public class SingleTCP {
 		}catch(IOException e ){};
 
 
-		File outF = new File("STCPFlowTable.sh");
+		File outF = new File("SingleTCPFlowTable.sh");
 		PrintWriter pw = null;
 		try{
 			pw = new PrintWriter(new FileWriter(outF));
@@ -49,9 +56,6 @@ public class SingleTCP {
 		for (int i = 0; i < sp.length; i++){
 			hosts[i] = Integer.parseInt(sp[i]);
 		}
-
-
-
 
 
 		//connectivity matrix
@@ -80,21 +84,19 @@ public class SingleTCP {
 
 		//print s1-s5
 		
-		for (int i = 0; i < connect.size();i ++){
+		for (int i = 0; i < connect.size();i ++)
+                {
 			List<Integer> l = connect.get(i);
 			int con = l.size();
 			Random r = new Random();
-			r.nextInt(con);
-			
-
-				
-				//pw.println("sudo ovs-ofctl add-flow s"+(i+1)+" ip,nw_src=10.0." + (i+1)+"."+j +"/32 actions=output:"+(hosts[i]+1+j));
-				pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " in_port="+(1)+",actions=output:"+(r.nextInt(con)+2));
-
+			int outport=r.nextInt(con)+2;
+		        pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " in_port="+(1)+",actions=output:"+(outport));
+                        pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " in_port="+(outport)+",actions=normal");
 			pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " priority=100,actions=normal");
+                        pw.println();
 
 		}
-		pw.println();
+		
 
 
 		//print s6-s8
@@ -106,27 +108,32 @@ public class SingleTCP {
 			for (int j = 0 ; j < count; j++)
 				pw.println("sudo ovs-ofctl add-flow s"+init+" in_port="+(j+1)+",actions=output:"+(count+1));
 			pw.println("sudo ovs-ofctl add-flow s"+init+" in_port="+(count+1)+",actions=normal");
+                        pw.println("sudo ovs-ofctl add-flow s"+init+ " priority=100,actions=normal");
 			init++;
+                        pw.println();
 		}
 		
 		//print s9-s11
 		for (int i = 0 ; i < nsat; i++){
 			pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+" in_port=1,actions=output:2");
 			pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+" in_port=2,actions=normal");
+                        pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+ " priority=100,actions=normal");
+                        pw.println();
 		}
 		//hub
 		for (int i = 0 ; i < nsat; i++){
-			pw.println("sudo ovs-ofctl add-flow s12 in_port="+(i+1)+" ,actions=output:"+(nsat+1));
+                        
+			pw.println("sudo ovs-ofctl add-flow s12 in_port="+(i+1)+",actions=output:"+(nsat+1));       
 		}
+                int hubs=nship+2*nsat+1;
+                pw.println("sudo ovs-ofctl add-flow s"+hubs+" in_port="+(nsat+1)+",actions=normal");
 		
 		
 
-
-
-		//bandwidth
 
 
 		pw.close();
 	}
-
+    
+    
 }
