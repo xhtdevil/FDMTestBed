@@ -22,8 +22,8 @@ public class SingleTCP {
 			System.exit(-1);
 		}
 			
-//		String fn = args[0].trim();
-		File f = new File("testcase_1.txt");
+		String fn = args[0].trim();
+		File f = new File(fn);
 		
 		Scanner sc = null;
 		try{
