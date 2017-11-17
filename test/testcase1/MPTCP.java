@@ -1,13 +1,22 @@
-//	Created by Wenxuan Mao on 11/12/17
-
-package testcase1;
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package mptcp;
 import java.util.*;
 import java.io.*;
-
+/**
+ *
+ * @author Wenxuan Mao && liuxin
+ */
 public class MPTCP {
 
-	public static void main(String[] args) {
-		if (args.length<1 || args.length > 1){
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        if (args.length<1 || args.length > 1){
 			System.out.println("Usage: 1 argument. Filename of config");
 			System.exit(-1);
 		}
@@ -73,22 +82,22 @@ public class MPTCP {
 			}
 			i++;
 		}
+                
 
 		//print s1-s5
 		for (int i = 0; i < connect.size();i ++){
 			List<Integer> l = connect.get(i);
-
+                        
 			for (int j = 0; j < l.size(); j++ ){
-				pw.println("sudo ovs-ofctl add-flow s"+(i+1)+" ip,nw_src=10.0." + (i+1)+"."+j +"/32,actions=output:"+(hosts[i]+1+j));
-				pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " in_port="+(hosts[i]+1+j)+",actions=normal");
+				pw.println("sudo ovs-ofctl add-flow s"+(i+1)+" ip,nw_src=10.0." + (i+1)+"."+j +"/32,actions=output:"+(l.size()+1+j));
+				pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " in_port="+(l.size()+1+j)+",actions=normal");
 
 			}
 			pw.println("sudo ovs-ofctl add-flow s"+(i+1)+ " priority=100,actions=normal");
-
+                        
+                        pw.println();
 		}
-		pw.println();
-
-
+		
 		//print s6-s8
 		int init = nship+1;
 		for (Map.Entry<Integer, Integer> entry : hm.entrySet()) {
@@ -98,7 +107,9 @@ public class MPTCP {
 			for (int j = 0 ; j < count; j++)
 				pw.println("sudo ovs-ofctl add-flow s"+init+" in_port="+(j+1)+",actions=output:"+(count+1));
 			pw.println("sudo ovs-ofctl add-flow s"+init+" in_port="+(count+1)+",actions=normal");
+			pw.println("sudo ovs-ofctl add-flow s"+init+ " priority=100,actions=normal");
 			init++;
+                        pw.println();
 		}
 		
 		
@@ -106,11 +117,15 @@ public class MPTCP {
 		for (int i = 0 ; i < nsat; i++){
 			pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+" in_port=1,actions=output:2");
 			pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+" in_port=2,actions=normal");
+                        pw.println("sudo ovs-ofctl add-flow s"+(nship+nsat+1+i)+ " priority=100,actions=normal");
+                        pw.println();
 		}
 		//hub
 		for (int i = 0 ; i < nsat; i++){
-			pw.println("sudo ovs-ofctl add-flow s12 in_port="+(i+1)+" ,actions=output:"+(nsat+1));
+			pw.println("sudo ovs-ofctl add-flow s12 in_port="+(i+1)+",actions=output:"+(nsat+1));
 		}
+                int hubs=nship+2*nsat+1;
+                pw.println("sudo ovs-ofctl add-flow s"+hubs+" in_port="+(nsat+1)+",actions=normal");
 		
 		
 
@@ -122,4 +137,6 @@ public class MPTCP {
 		pw.close();
 	}
 
+    
+    
 }
