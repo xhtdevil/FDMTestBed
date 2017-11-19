@@ -142,7 +142,7 @@ def WifiNet(inputFile):
         senderList = [0,1,3,4,6,7,9,10,12,13]
         recvList = [11,14,2,8,5,11,5,8,2,11]
         bwReq = [6,4,7,3,4,4,3,3,3,3]
-        ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*13, sTime)
+        ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
         time.sleep(0.2)
     
     info("running simulaiton...\n")
@@ -168,7 +168,7 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     dst = nodes[hosts[dstNo]]
     info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
     src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
-    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 10000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
+    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
     
 if __name__ == '__main__':
     setLogLevel('info')
