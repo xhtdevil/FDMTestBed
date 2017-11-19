@@ -99,7 +99,7 @@ for link in links:
         net.addLink(node1, node2)
  ```
 
-We can use ```mininet > host0 watch -n 1 '-netstat -n'``` to monitor host status. Below is a capture of netstat of host0 when running MPTCP. With bandwidth constraint, we can see the host is sending TCP messages using multi IPs. 
+We can use ```mininet > host0 watch -n 1 'netstat -n'``` to monitor host status. Below is a capture of netstat of host0 when running MPTCP. With bandwidth constraint, we can see the host is sending TCP messages using multi IPs. 
 ![](https://github.com/rockwellcollins/FDMTestBed/blob/rockwellcollins-patch-3/testcase4/raw/cap.PNG?raw=true)
 
 ## Analysis after Testings
