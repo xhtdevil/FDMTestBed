@@ -113,8 +113,11 @@ If you take a quick look at the ```analysis.py```, you can find two functions: `
 Result.csv contains information of the D-ITG testing. Although we only used average bitrate, average delay and delay sd as criteria, we still leave some other parameters that may be useful for further analysis. 
 For reference, every row in the csv file stands for : ```"total_time","total_packets","min_delay","max_delay","avg_delay","avg_jitter","sd_delay","avg_bit_rate","avg_pkt_rate"```.
 
-### Plot with R Files
-```analysis109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones. When you run R on your computer, remember to change working directory to folder that contains ```result.csv```.
+### Plot with R
+```analysis1109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones. When you run R on your computer, remember to change working directory to folder that contains ```result.csv```.
+
+### Draw Histogram with R
+```analysis1116.R``` draws Histogram of staisfacroty and delay distribution according results of mass testing (in ```\result```).
 
 ## Anyway, if I want to run the performance testing as soon as possible, what should I do?
 That's a very good question! In fact, all the information above is not necessary for doing performance testing, but very useful when you want to modify the code or debug.
