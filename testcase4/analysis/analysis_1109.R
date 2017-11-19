@@ -3,9 +3,6 @@
 # 2017-Nov-03
 
 # set path
-setwd("D://SHARE//MPTCP+FDM");
-#setwd("D://SHARE//Single");
-#setwd("D://SHARE//MPTCP");
 
 
 rm( list = ls (all = TRUE));
@@ -74,4 +71,4 @@ satisfa
 #Single TCP | 1.95ms | 0.735
 #MPTCP | 41.7ms | 0.666
 #FDM | 34.59ms | 0.656
-Reduce(function(y,w) w(y),c(function(x) x+1,function(x) x*x,function(x) g(x)/2),A)
+
