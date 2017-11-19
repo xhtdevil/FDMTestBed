@@ -144,7 +144,7 @@ You can also run the rest two cases similarly : )
 
 ## Result and Analysis
 According to the topology of testcase 4, we ran network simulation 10 times with each routing method (Single TCP, MPTCP and MPTCP with FDM), separately. Using D-ITG as a traffic generator to make host send 1k byte TCP packets to the destinations with rate defined by requirements. We use satisfactory, which is defined by (bw in real network)/(requirement bw), to describe how the network fulfill sending requirements (why not throughput: bw requirements of hosts differs), and delay to evaluate the quality of connections.
-After testing, we aggregate the criterias of each host and draw Histogram(why not average value: It's better to use Histogram than average value to evaluate the performance of network, since the data distribution is not normal.) of both parameters to see the perfrmance difference of routing method. The result is shown as follows.
+After testing, we aggregate the criterias of each host and draw Histogram(why not average value: It's better to use Histogram than average value to evaluate the performance of network, since the data distribution is not normal.) of both parameters to see the perfrmance difference of routing method. The result is shown as follows. (In this project, I used R to run analysis. The result code is in ```\result``` and you can run ```\analysis\analysis1116.R``` to get the plots. You can also use similar statistic tools if you like.)
 
 From the plot, we can see that although FDM uses single path, FDM still achieves better performance.
 
