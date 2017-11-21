@@ -21,7 +21,7 @@ colnames(data)[1] <- "hostname";
 # BW Calculation
 # install.packages("ggplot2")
 library("ggplot2")
-#data$hostname <- factor(data$hostname) 
+#data$hostname <- factor(data$hostname)
 r <- ggplot(data=data, aes(x = hostname, y=avg_bit_rate, fill = hostname, group = factor(1)))
 r <- r + geom_bar(stat = "identity")
 r <- r + labs(title = "Throughput", x = "Hosts", y = "Average Bit Rate /Kbps");
@@ -35,7 +35,7 @@ for (i in seq(1, length(data$avg_bit_rate))){
   sat[i] = data$avg_bit_rate[i] / 1000 / req[i];
 }
 data <- cbind(data,sat);
-#data$hostname <- factor(data$hostname) 
+#data$hostname <- factor(data$hostname)
 s1 <- ggplot(data=data, aes(x = hostname, y=sat, fill = sat, group = factor(1)))
 s1 <- s1 + geom_bar(stat = "identity")
 s1 <- s1 + scale_fill_gradient(low='red', high='green')
@@ -75,4 +75,3 @@ satisfa
 #Single TCP | 1.95ms | 0.735
 #MPTCP | 41.7ms | 0.666
 #FDM | 34.59ms | 0.656
-Reduce(function(y,w) w(y),c(function(x) x+1,function(x) x*x,function(x) g(x)/2),A)

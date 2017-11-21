@@ -99,7 +99,7 @@ for link in links:
         net.addLink(node1, node2)
  ```
 
-We can use ```mininet > host0 watch -n 1 '-netstat -n'``` to monitor host status. Below is a capture of netstat of host0 when running MPTCP. With bandwidth constraint, we can see the host is sending TCP messages using multi IPs. 
+We can use ```mininet > host0 watch -n 1 'netstat -n'``` to monitor host status. Below is a capture of netstat of host0 when running MPTCP. With bandwidth constraint, we can see the host is sending TCP messages using multi IPs. 
 ![](https://github.com/rockwellcollins/FDMTestBed/blob/rockwellcollins-patch-3/testcase4/raw/cap.PNG?raw=true)
 
 ## Analysis after Testings
@@ -113,8 +113,11 @@ If you take a quick look at the ```analysis.py```, you can find two functions: `
 Result.csv contains information of the D-ITG testing. Although we only used average bitrate, average delay and delay sd as criteria, we still leave some other parameters that may be useful for further analysis. 
 For reference, every row in the csv file stands for : ```"total_time","total_packets","min_delay","max_delay","avg_delay","avg_jitter","sd_delay","avg_bit_rate","avg_pkt_rate"```.
 
-### Plot with R Files
-```analysis109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones. When you run R on your computer, remember to change working directory to folder that contains ```result.csv```.
+### Plot with R
+```analysis1109.R``` is an R file to plot the satisfaction and delay result. If you do not have R on your computer, you can use Excel to plot similar ones. When you run R on your computer, remember to change working directory to folder that contains ```result.csv```.
+
+### Draw Histogram with R
+```analysis1116.R``` draws Histogram of staisfacroty and delay distribution according results of mass testing (in ```\result```).
 
 ## Anyway, if I want to run the performance testing as soon as possible, what should I do?
 That's a very good question! In fact, all the information above is not necessary for doing performance testing, but very useful when you want to modify the code or debug.
@@ -141,6 +144,14 @@ Now we do Single TCP Testings:
 * run ```analysis1109.R```, the result should appear on CLI and plots should be in ```~/FOO```
 
 You can also run the rest two cases similarly : )
+
+## Result and Analysis
+![](https://github.com/xhtdevil/FDMTestBed/blob/master/testcase4/raw/Topology%20of%20Testcase%204.PNG?raw=true)
+According to the topology of testcase 4(shown above), we ran network simulation 10 times with each routing method (Single TCP, MPTCP and MPTCP with FDM), separately. Using D-ITG as a traffic generator to make host send 1k byte TCP packets to the destinations with rate defined by requirements. We use satisfactory, which is defined by (bw in real network)/(requirement bw), to describe how the network fulfill sending requirements (why not throughput: bw requirements of hosts differs), and delay to evaluate the quality of connections.
+After testing, we aggregate the criterias of each host and draw Histogram(why not average value: It's better to use Histogram than average value to evaluate the performance of network, since the data distribution is not normal.) of both parameters to see the perfrmance difference of routing method. The result is shown as follows. (In this project, I used R to run analysis. The result code is in ```\result``` and you can run ```\analysis\analysis1116.R``` to get the plots. You can also use similar statistic tools if you like.)
+![](https://github.com/xhtdevil/FDMTestBed/blob/master/testcase4/Satisfactory%20Distribution.jpg?raw=true)
+![](https://github.com/xhtdevil/FDMTestBed/blob/master/testcase4/Delay%20Distribution.jpg?raw=true)
+From the plot, we can see that although FDM uses single path, FDM still achieves better performance.
 
 ## Discussion: Lessons Learned(前车之鉴 in Chinese)
 //TODO
