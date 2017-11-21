@@ -52,3 +52,5 @@ sudo ovs-ofctl add-flow s9 priority=100,actions=normal
 sudo ovs-ofctl add-flow s10 priority=100,actions=normal
 sudo ovs-ofctl add-flow s11 priority=100,actions=normal
 sudo ovs-ofctl add-flow s12 priority=100,actions=normal
+sudo ovs-ofctl add-flow s13 priority=100,actions=normal
+sudo ovs-ofctl add-flow s14 priority=100,actions=normal

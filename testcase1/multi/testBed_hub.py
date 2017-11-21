@@ -261,8 +261,9 @@ def WifiNet(inputFile):
 
     # start D-ITG application
     # set simulation time
-    sTime = 120000  # default 120,000ms
-    bwReq = [10,10,8,6,6]
+    sTime = 60000  # default 120,000ms
+    # bwReq = [10,10,8,6,6]
+    bwReq = [12,12,12,12,12]
     for i in range(0, num_host - 1):
         sender = i
         receiver = num_host - 1
@@ -272,6 +273,9 @@ def WifiNet(inputFile):
     info("please wait...\n")
 
     time.sleep(sTime/1000)
+
+    # You need to change the path here
+    call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
 
     CLI(net)
 
