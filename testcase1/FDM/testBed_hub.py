@@ -123,6 +123,9 @@ def WifiNet(inputFile):
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 0"
+                queueConfig.write(commandQueue + "\n")
+
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
                 queue_nums = []
                 rates = []
@@ -242,17 +245,17 @@ def WifiNet(inputFile):
         if os.path.isfile(hosts[i]+'.sh'):
             src.cmdPrint('./'+hosts[i]+'.sh')
 
-    # time.sleep(3)
-    # info('*** set queues ***\n')
-    # call(["sudo", "bash","FDMQueueConfig.sh"])
-
-    # time.sleep(3)
-    # info('*** set flow tables ***\n')
-    # call(["sudo", "bash","FDMFlowTableConfig.sh"])
+    time.sleep(3)
+    info('*** set queues ***\n')
+    call(["sudo", "bash","FDMQueueConfig.sh"])
 
     time.sleep(3)
     info('*** set flow tables ***\n')
-    call(["sudo", "bash","MPTCPFlowTable.sh"])
+    call(["sudo", "bash","FDMFlowTableConfig.sh"])
+
+    # time.sleep(3)
+    # info('*** set flow tables ***\n')
+    # call(["sudo", "bash","MPTCPFlowTable.sh"])
 
     # start D-ITG Servers
     for i in [num_host - 1]: # last host is receiver
@@ -265,18 +268,19 @@ def WifiNet(inputFile):
 
     # start D-ITG application
     # set simulation time
-    sTime = 120000  # default 120,000ms
+    sTime = 60000  # default 120,000ms
     bwReq = [10,10,8,6,6]
     for i in range(0, num_host - 1):
         sender = i
         receiver = num_host - 1
-        ITGTest(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
+        ITGTest(sender, receiver, hosts, nodes, int(bwReq[i]*12.5), sTime)
         time.sleep(0.2)
     info("running simulaiton...\n")
     info("please wait...\n")
 
     time.sleep(sTime/1000)
 
+    # You need to change the path here
     call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
 
     CLI(net)

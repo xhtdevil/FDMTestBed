@@ -3,7 +3,7 @@
 # 2017-Nov-03
 
 # set path
-setwd("D://SHARE//MPTCP+FDM");
+setwd("/mnt/hgfs/FDMTestBed/testcase4");
 #setwd("D://SHARE//Single");
 #setwd("D://SHARE//MPTCP");
 
@@ -19,6 +19,7 @@ data <- data.frame(rownames(data),data);
 colnames(data)[1] <- "hostname";
 
 # BW Calculation
+# install.packages("ggplot2")
 library("ggplot2")
 #data$hostname <- factor(data$hostname) 
 r <- ggplot(data=data, aes(x = hostname, y=avg_bit_rate, fill = hostname, group = factor(1)))
