@@ -139,6 +139,8 @@ def WifiNet(inputFile):
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
+                commandQueue ="sudo ifconfig "+end1+" txqueuelen 1"
+                queueConfig.write(commandQueue + "\n")
                 queue_nums = []
                 rates = []
                 ipaddrs = []

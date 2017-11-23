@@ -265,7 +265,7 @@ def WifiNet(inputFile):
 
     time.sleep(sTime/1000)
 
-    #call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
+   
 
     CLI(net)
 

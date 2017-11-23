@@ -31,7 +31,7 @@ def statAnalysis(sndList, recvList):
     '''
     time = datetime.datetime.now()
     fileName = "result_" + str(time) + ".csv"
-    g = open("result.csv", "w")
+    g = open(fileName, "w")
     str_ini = 'host,'
 
     # sender host list
