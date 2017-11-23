@@ -288,4 +288,4 @@ def ITGUDPGeneration(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("alloc_hub.txt")
+    WifiNet("allocation_mu_9_modified.txt")
