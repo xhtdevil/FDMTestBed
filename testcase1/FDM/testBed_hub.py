@@ -123,6 +123,9 @@ def WifiNet(inputFile):
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1"
+                queueConfig.write(commandQueue + "\n")
+
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
                 queue_nums = []
                 rates = []
@@ -221,7 +224,15 @@ def WifiNet(inputFile):
     for link in links:
         name1, name2 = link[0], link[1]
         node1, node2 = nodes[name1], nodes[name2]
-        net.addLink(node1, node2)
+        if(name1 == 's6' and name2 == 's9'):
+            net.addLink(node1, node2, bw = 30)
+            info('set *************************')
+        elif(name1 == 's7' and name2 == 's10'):
+            net.addLink(node1, node2, bw = 20)
+        elif (name1 == 's8' and name2 == 's11'):
+            net.addLink(node1, node2, bw = 15)
+        else:
+            net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -240,49 +251,59 @@ def WifiNet(inputFile):
 
     time.sleep(3)
     info('*** set flow tables ***\n')
-
     call(["sudo", "bash","FDMFlowTableConfig.sh"])
-    info('*** start test ping and iperf***\n')
 
-    myServer = []
-    des_open = []
-    for i in range(0,len(src_hosts)):
-        src = nodes[src_hosts[i]]
-        des = nodes[des_hosts[i]]
-        myServer.append("")
-        des_open.append(False)
-        if des.waiting == False:
-            info("Setting up server " + des_hosts[i] + " for iperf",'\n')
-            myServer[i] = ServerSetup(des, des_hosts[i])
-            myServer[i].setDaemon(True)
-            myServer[i].start()
-            des_open[i] = True
-            time.sleep(1)
+    # time.sleep(3)
+    # info('*** set flow tables ***\n')
+    # call(["sudo", "bash","MPTCPFlowTable.sh"])
 
-    for i in range(0,len(src_hosts)):
-        src = nodes[src_hosts[i]]
-        des = nodes[des_hosts[i]]
-        info("testing",src_hosts[i],"<->",des_hosts[i],'\n')
-        src.cmdPrint('ping -c 2 ' + des_ip[i])
+    # start D-ITG Servers
+    for i in [num_host - 1]: # last host is receiver
+        srv = nodes[hosts[i]]
+        info("starting D-ITG servers...\n")
+        srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+        srv.cmdPrint("./ITGRecv &")
+
+    time.sleep(1)
+
+    # start D-ITG application
+    # set simulation time
+    sTime = 60000  # default 120,000ms
+    bwReq = [12,12,12,12,12]
+    # bwReq = [10,10,8,6,6]
+    for i in range(0, num_host - 1):
+        sender = i
+        receiver = num_host - 1
+        ITGTest(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
         time.sleep(0.2)
-        src.cmdPrint('iperf -c ' + des_ip[i] + ' -t 3 -i 1')
-        time.sleep(0.2)
+    info("running simulaiton...\n")
+    info("please wait...\n")
 
-    time.sleep(10)
-    for i in range(0,len(src_hosts)):
-        if des_open[i] == True:
-            print("Closing iperf session " + des_hosts[i])
-            myServer[i].close(i)
+    time.sleep(sTime/1000)
 
-    time.sleep(5)
+    # You need to change the path here
+    call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
 
     CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
 
+def iperfTest(srcNo, dstNo, hosts,nodes):
+    src = nodes[hosts[srcNo]]
+    dst = nodes[hosts[dstNo]]
+    info("iperfing",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("iperf -c 10.0.0." + str(dstNo + 1) + " -t 3600 -i 2 &")
+    time.sleep(0.2)
+    #src.cmdPrint("sudo wireshark &")
 
+def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
+    src = nodes[hosts[srcNo]]
+    dst = nodes[hosts[dstNo]]
+    info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
 
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("allocation.txt")
+    WifiNet("allocation_testcase1_12.txt")

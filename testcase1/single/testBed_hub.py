@@ -12,20 +12,20 @@ import sys, time
 flush=sys.stdout.flush
 import os.path, string
 
-class ServerSetup(Thread):
-    def __init__(self, node, name):
-        "Constructor"
-        Thread.__init__(self)
-        self.node = node
-        self.name = name
-
-    def run(self):
-        print("Server set up for iperf " + self.name)
-        self.node.cmdPrint("iperf -s")
-
-    def close(self, i):
-        self.running = False
-        print("exit " + self.name)
+# class ServerSetup(Thread):
+#     def __init__(self, node, name):
+#         "Constructor"
+#         Thread.__init__(self)
+#         self.node = node
+#         self.name = name
+#
+#     def run(self):
+#         print("Server set up for iperf " + self.name)
+#         self.node.cmdPrint("iperf -s")
+#
+#     def close(self, i):
+#         self.running = False
+#         print("exit " + self.name)
 
 def WifiNet(inputFile):
     input = open(inputFile, "r")
@@ -195,13 +195,13 @@ def WifiNet(inputFile):
     for i in range(0, num_ship):
         queueConfig.write("sudo ovs-ofctl -O Openflow13 queue-stats s" + str(i + 1) + "\n")
 
-    for i in range(0, num_ship + 2 * num_sat + 1):
+    for i in range(0, num_ship + 3 * num_sat):
         flowTableConfig.write("sudo ovs-ofctl add-flow s" + str(i + 1) + " priority=100,actions=normal\n")
 
     flowTableConfig.close()
     queueConfig.close()
-    call(["sudo", "chmod", "777", "FDMQueueConfig.sh"])
-    call(["sudo", "chmod", "777", "FDMFlowTableConfig.sh"])
+    # call(["sudo", "chmod", "777", "FDMQueueConfig.sh"])
+    call(["sudo", "chmod", "777", "SingleTCPFlowTable.sh"])
 
     net = Mininet(link=TCLink, controller=None, autoSetMacs = True)
 
@@ -221,7 +221,15 @@ def WifiNet(inputFile):
     for link in links:
         name1, name2 = link[0], link[1]
         node1, node2 = nodes[name1], nodes[name2]
-        net.addLink(node1, node2)
+        if(name1 == 's6' and name2 == 's9'):
+            net.addLink(node1, node2, bw = 30)
+            info('set *************************')
+        elif(name1 == 's7' and name2 == 's10'):
+            net.addLink(node1, node2, bw = 20)
+        elif (name1 == 's8' and name2 == 's11'):
+            net.addLink(node1, node2, bw = 15)
+        else:
+            net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -234,54 +242,61 @@ def WifiNet(inputFile):
         if os.path.isfile(hosts[i]+'.sh'):
             src.cmdPrint('./'+hosts[i]+'.sh')
 
-    time.sleep(3)
-    info('*** set queues ***\n')
-    call(["sudo", "bash","FDMQueueConfig.sh"])
+    # time.sleep(3)
+    # info('*** set queues ***\n')
+    # call(["sudo", "bash","FDMQueueConfig.sh"])
 
     time.sleep(3)
     info('*** set flow tables ***\n')
+    call(["sudo", "bash","SingleTCPFlowTable0.sh"])
 
-    call(["sudo", "bash","FDMFlowTableConfig.sh"])
-    info('*** start test ping and iperf***\n')
+    # start D-ITG Servers
+    for i in [num_host - 1]: # last host is receiver
+        srv = nodes[hosts[i]]
+        info("starting D-ITG servers...\n")
+        srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+        srv.cmdPrint("./ITGRecv &")
 
-    myServer = []
-    des_open = []
-    for i in range(0,len(src_hosts)):
-        src = nodes[src_hosts[i]]
-        des = nodes[des_hosts[i]]
-        myServer.append("")
-        des_open.append(False)
-        if des.waiting == False:
-            info("Setting up server " + des_hosts[i] + " for iperf",'\n')
-            myServer[i] = ServerSetup(des, des_hosts[i])
-            myServer[i].setDaemon(True)
-            myServer[i].start()
-            des_open[i] = True
-            time.sleep(1)
+    time.sleep(1)
 
-    for i in range(0,len(src_hosts)):
-        src = nodes[src_hosts[i]]
-        des = nodes[des_hosts[i]]
-        info("testing",src_hosts[i],"<->",des_hosts[i],'\n')
-        src.cmdPrint('ping -c 2 ' + des_ip[i])
+    # start D-ITG application
+    # set simulation time
+    sTime = 60000  # default 120,000ms
+    # bwReq = [10,10,8,6,6]
+    bwReq = [12,12,12,12,12]
+    for i in range(0, num_host - 1):
+        sender = i
+        receiver = num_host - 1
+        ITGTest(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
         time.sleep(0.2)
-        src.cmdPrint('iperf -c ' + des_ip[i] + ' -t 3 -i 1')
-        time.sleep(0.2)
+    info("running simulaiton...\n")
+    info("please wait...\n")
 
-    time.sleep(10)
-    for i in range(0,len(src_hosts)):
-        if des_open[i] == True:
-            print("Closing iperf session " + des_hosts[i])
-            myServer[i].close(i)
+    time.sleep(sTime/1000)
 
-    time.sleep(5)
+    # You need to change the path here
+    call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
+
 
     CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
 
+def iperfTest(srcNo, dstNo, hosts,nodes):
+    src = nodes[hosts[srcNo]]
+    dst = nodes[hosts[dstNo]]
+    info("iperfing",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("iperf -c 10.0.0." + str(dstNo + 1) + " -t 3600 -i 2 &")
+    time.sleep(0.2)
+    #src.cmdPrint("sudo wireshark &")
 
+def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
+    src = nodes[hosts[srcNo]]
+    dst = nodes[hosts[dstNo]]
+    info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
 
 if __name__ == '__main__':
     setLogLevel('info')
