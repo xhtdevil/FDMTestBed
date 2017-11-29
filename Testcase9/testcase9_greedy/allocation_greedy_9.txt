@@ -42,10 +42,16 @@ add link: host2 s2
 add link: host3 s2
 add link: host3 s2
 add link: host4 s3
+add link: host4 s3
+add link: host5 s3
 add link: host5 s3
 add link: host6 s4
+add link: host6 s4
+add link: host7 s4
 add link: host7 s4
 add link: host8 s5
+add link: host8 s5
+add link: host9 s5
 add link: host9 s5
 add link: s1 s6
 add link: s1 s8
