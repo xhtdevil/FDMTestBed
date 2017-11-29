@@ -118,7 +118,7 @@ def WifiNet(inputFile):
     bwReq=[]
     line = input.readline()
     while line:
-        # print(line)
+        print(line)
         end1, end2, num_flow = line.strip().split()
         num_flow = num_flow.strip().split(":")[1]
 
@@ -290,4 +290,4 @@ def ITGUDPGeneration(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("allocation_um_9.txt")
+    WifiNet("allocation_greedy_9_modified.txt")
