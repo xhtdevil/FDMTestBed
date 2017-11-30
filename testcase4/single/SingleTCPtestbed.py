@@ -12,6 +12,10 @@ flush=sys.stdout.flush
 import os.path, string
 
 def WifiNet(inputFile):
+
+    # disable mptcp
+    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=0"])
+
     input = open(inputFile, "r")
     """ Node names """
     max_outgoing = []
@@ -22,7 +26,7 @@ def WifiNet(inputFile):
     portCount = {} # count the current eth usage of a host/switch
     linkToPort = {} # map link to certain ethernets of src and dst
 
-  
+
     flows = []
     routingConfig = []
     queue_num = 1
@@ -51,7 +55,7 @@ def WifiNet(inputFile):
     lastline=""
     while line.strip()!="End":
     	line.strip()
-    	if line!=lastline:  
+    	if line!=lastline:
         	action, type_node, end1, end2 = line.split()
         	if end1[0] == "s" and int(end1[1:]) <= num_ship and end2[0] == "s":
             		max_outgoing[int(end1[1:]) - 1] += 1
@@ -60,7 +64,7 @@ def WifiNet(inputFile):
         line= input.readline()
     input.close()
     print(max_outgoing)
-    
+
     net = Mininet(link=TCLink, controller=None, autoSetMacs = True)
     nodes = {}
 
@@ -102,27 +106,35 @@ def WifiNet(inputFile):
         info("starting D-ITG servers...\n")
         srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
         srv.cmdPrint("./ITGRecv &")
-    
+
     time.sleep(1)
-    
+
     # start D-ITG application
     # set simulation time
-    sTime = 120000# default 120,000ms
+    sTime = 60000# default 120,000ms
     for i in range(0,10):
         senderList = [0,1,3,4,6,7,9,10,12,13]
         recvList = [11,14,2,8,5,11,5,8,2,11]
-        bwReq = [6,4,7,3,4,4,3,3,3,3]
+        # bwReq = [6,4,7,3,4,4,3,3,3,3]
+
+        # large requirement
+        bwReq = [2,12,3,3,5,5,12,2,12,2]
         ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
         time.sleep(0.2)
     info("running simulaiton...\n")
     info("please wait...\n")
-    
+
     time.sleep(sTime/1000)
 
-    CLI(net)
+    # You need to change the path here
+    call(["sudo", "python","../analysis/analysis.py"])
+    # CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
+
+    # enable mptcp
+    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=1"])
 
 def iperfTest(srcNo, dstNo, hosts,nodes):
     src = nodes[hosts[srcNo]]
@@ -138,7 +150,7 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
     src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
     src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
-    
+
 if __name__ == '__main__':
     setLogLevel('info')
     WifiNet("allocation.txt")

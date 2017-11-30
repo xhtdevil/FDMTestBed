@@ -1,14 +1,3 @@
-host13 host11 10.0.0.12
-host10 host8 10.0.0.9
-host9 host5 10.0.0.6
-host7 host11 10.0.0.12
-host6 host5 10.0.0.6
-host4 host8 10.0.0.9
-host3 host2 10.0.0.3
-host12 host2 10.0.0.3
-host1 host14 10.0.0.15
-host0 host11 10.0.0.12
-End
 add host: host0
 add host: host1
 add host: host2

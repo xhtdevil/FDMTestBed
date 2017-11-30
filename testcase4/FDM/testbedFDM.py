@@ -148,7 +148,11 @@ def WifiNet(inputFile):
             index_intf = intf[3:]
 
             if index_switch <= num_ship and "host" != end2[0:4]:
+
                 # uplink to ship, need to configure both flowtable and queue
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1"
+                queueConfig.write(commandQueue + "\n")
+
                 for i in range(0, int(num_flow)):
                     ipaddr, rate = input.readline().strip().split()
                     commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 queues:" + str(queue_num) + "=@q" + str(queue_num) + " -- --id=@q" + str(queue_num) + " create Queue other-config:min-rate=" + str(int(float(rate) * 1000000)) + " other-config:max-rate=" + str(int(float(rate) * 1000000))
@@ -258,12 +262,12 @@ def WifiNet(inputFile):
         info("starting D-ITG servers...\n")
         srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
         srv.cmdPrint("./ITGRecv &")
-    
+
     time.sleep(1)
-    
+
     # start D-ITG application
     # set simulation time
-    sTime = 120000# default 120,000ms
+    sTime = 60000# default 120,000ms
     for i in range(0,10):
         senderList = [0,1,3,4,6,7,9,10,12,13]
         recvList = [11,14,2,8,5,11,5,8,2,11]
@@ -272,11 +276,13 @@ def WifiNet(inputFile):
         time.sleep(0.2)
     info("running simulaiton...\n")
     info("please wait...\n")
-    
+
     time.sleep(sTime/1000)
-    
-    
-    CLI(net)
+
+    # You need to change the path here
+    call(["sudo", "python","../analysis/analysis.py"])
+
+    # CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
@@ -295,8 +301,8 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
     src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
     src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
-    
+
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("allocation.txt")
+    WifiNet("allocation_legacy.txt")
     #WifiNet(30,3,"127.0.0.1",[2.0]*30,[30,20,30],120)

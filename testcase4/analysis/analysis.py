@@ -5,6 +5,7 @@ import sys
 import time
 import os.path
 import string
+import datetime
 os.chdir("/home/osboxes/D-ITG-2.8.1-r1023/bin/")
 
 def extractStat(sndList, recvList):
@@ -28,8 +29,10 @@ def statAnalysis(sndList, recvList):
     '''
         Analysis the decoded files
     '''
-    g = open("result.csv", "w")
-    str_ini = ''
+    time = datetime.datetime.now()
+    fileName = "result_" + str(time) + ".csv"
+    g = open("/mnt/hgfs/FDMTestBed/testcase4/" + fileName, "w")
+    str_ini = 'host,'
 
     # sender host list
     for i in range(0,len(sndList)):
@@ -40,15 +43,15 @@ def statAnalysis(sndList, recvList):
             str_ini = str_ini + '\n'
 
     # initial values
-    total_time = ''
-    total_packets = ''
-    min_delay = ''
-    max_delay = ''
-    avg_delay = ''
-    avg_jitter = ''
-    sd_delay = ''
-    avg_bit_rate = ''
-    avg_pkt_rate = ''
+    total_time = 'total_time,'
+    total_packets = 'total_packets,'
+    min_delay = 'min_delay,'
+    max_delay = 'max_delay,'
+    avg_delay = 'avg_delay,'
+    avg_jitter = 'avg_jitter,'
+    sd_delay = 'sd_delay,'
+    avg_bit_rate = 'avg_bit_rate,'
+    avg_pkt_rate = 'avg_pkt_rate,'
 
     for i in range(0, len(sndList)):
         decodedRecvFile = "receiver" + str(sndList[i]) + "ss" + str(recvList[i]) + ".txt"
@@ -106,5 +109,6 @@ if __name__ == '__main__':
     sndList = [0, 1, 3, 4, 6, 7, 9, 10, 12, 13]
     # receiver list
     recvList = [11, 14, 2, 8, 5, 11, 5, 8, 2, 11]
+
     extractStat(sndList, recvList)
     statAnalysis(sndList, recvList)
