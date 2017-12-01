@@ -49,6 +49,14 @@ data2<-cbind(udp2,testcase)
 colnames(data2)[2]<-c("delay_value") 
 data<-rbind(data,data2)
 
+library("ggplot2")
+r <- ggplot(data=data, aes(x = algorithm, y=delay_value, fill =testcase))+ geom_bar(stat = "identity",position="dodge")
+r <- r + labs(title = "Average UDP Delay in original and modified Testcase9", x = "Algorithm", y = "Average UDP Delay /s")
+r
+ggsave("UDP Delay Comparison.png")
+
+
+
 mptcp<-data.frame(mptcp)
 algorithm<-rownames(mptcp)
 mptcp<-data.frame(algorithm,mptcp)
@@ -62,11 +70,7 @@ data2<-cbind(mptcp2,testcase)
 colnames(data2)[2]<-c("delay_value") 
 data<-rbind(data,data2)
 
-library("ggplot2")
-r <- ggplot(data=data, aes(x = algorithm, y=delay_value, fill =testcase))+ geom_bar(stat = "identity",position="dodge")
-r <- r + labs(title = "Average UDP Delay in original and modified Testcase9", x = "Algorithm", y = "Average UDP Delay /s")
-r
-ggsave("UDP Delay Comparison.png")
+
 
 g <- ggplot(data=data, aes(x = algorithm, y=delay_value, fill =testcase))+ geom_bar(stat = "identity",position="dodge")
 g <- g + labs(title = "Average MPTCP Delay in original and modified Testcase9", x = "Algorithm", y = "Average MPTCP Delay /s")
