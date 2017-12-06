@@ -418,7 +418,7 @@ int main() {
 	}
 
 	//define per-link hashtable to store flows
-	vector<unordered_map<string, double>> Gtable(nl), Etable(nl);
+	vector<unordered_map<string, double>> Gtable(nl), Etable(nl), PGtable(nl);
 
 	for (int i = 0; i < n_ship; i++) {
 		int ship = n_host + i;
@@ -595,11 +595,13 @@ int main() {
 		for (int i = 0; i < nl; i++) {
 			if (i < n_src_host) {
 				for (int j = 0; j<ship_sat[End2[i]-n_host]; j++) {
-					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
+					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << " "<<Cap[i]<<" 0"<<endl;
 				}
 			}
+			else if (hubs.find(End2[i])!=hubs.end())
+				output<< "add link: "<<names[End1[i]]<<" "<<names[End2[i]]<<" "<<Cap[i]<<" 200"<<endl;
 			else
-				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
+				output << "add link: " << names[End1[i]] << " " << names[End2[i]] <<" "<<Cap[i]<<" 0"<< endl;
 		}
 		output << "End" << endl;
 		//printing ip
@@ -696,7 +698,7 @@ int main() {
 			}
 			SetLinkLens(nl, Gflow, Cap, MsgLen, FDlen, Cost);
 			SetSP(nn, link, End2, FDlen, Adj, SPdist, SPpred);
-			LoadLinks(nn, nl, MM_Req, SPpred, End1, Gflow,Etable);
+			LoadLinks(nn, nl, MM_Req, SPpred, End1, Gflow,Gtable);
 			Aresult = AdjustCaps(nl, Gflow, Cap, NewCap);
 			if (Aresult == 1)
 				Aflag = 0;
@@ -735,7 +737,7 @@ int main() {
 				}
 				count++;
 			}
-			output << "mid is " << mid << endl;
+			cout << "mid is " << mid << endl;
 			if (print) {
 				//feasible
 
@@ -759,39 +761,77 @@ int main() {
 			if (print) {
 				for (int i = 0; i < nl; i++) {
 					Pflow[i] = Gflow[i];
+					PGtable[i] = Gtable[i];
 				}
 			}
 		}
 
-		//count  traffic at each ship
-		for (auto u : ships) {
-			double sum = 0;
-			output << "Ship " << u << ":\n";
-			for (auto l : adj[u]) {
-				if (Pflow[l] > 0) {
-					output << "Usage at sat " << End2[l] - n_ship << " is " << Pflow[l] << "\n";
-					sum += Pflow[l];
-				}
-			}
-			output << "Total out going flow at ship " << u << " is " << sum << endl;
-
-			sum = 0;
-			int dest = srcDest[u];
-			for (int i = 0; i < nl; i++) {
-				if (End2[i] == dest) {
-					output << "Downlink at sat " << End1[i] - n_ship - n_sat << " is " << Pflow[i] << "\n";
-					sum += Pflow[i];
-				}
-			}
-			output << "Total in comming flow at ship " << dest << " is " << sum << endl << endl;
+		for (auto it : srcDest) {
+			output << names[it.first] << " " << names[it.second] << " 10.0.0." + to_string(it.second + 1) << endl;
 		}
-		//count traffic at each satellite
-		//for (auto s : sats) {
-		//	for (auto l : adj[s]) {
-		//		output << "Total load at sat " << s << " is " << Pflow[l] << "\n";
-		//	}
-		//}
+		output << "End" << endl;
+		unordered_map<string, vector<string>> usedIP;
+		for (int link = 0; link < n_src_host; link++) {
+			int src_node = End1[link];
+			for (auto it : PGtable[link]) {
+				if (it.second > 1.0e-5) {
+					usedIP[names[src_node]].push_back(it.first);
+				}
+			}
+		}
 
+
+		//output nodes and links in order
+		for (int i = 0; i < nn; i++) {
+			if (i < n_host)
+				output << "add host: " << names[i] << endl;
+			else if (ships.find(i) != ships.end())
+				output << "add ship: " << names[i] << endl;
+			else if (hubs.find(i) != hubs.end())
+				output << "add hub: " << names[i] << endl;
+			else if (mirror_ships.find(i) != mirror_ships.end())
+				output << "add mirror_ship: " << names[i] << endl;
+			else
+				output << "add sat: " << names[i] << endl;
+		}
+		output << "End" << endl;
+		for (int i = 0; i < nl; i++) {
+			if (i < n_src_host) {
+				for (int j = 0; j<ship_sat[End2[i]-n_host]; j++) {
+					output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
+				}
+			}
+			else
+				output << "add link: " << names[End1[i]] << " " << names[End2[i]] << endl;
+		}
+		output << "End" << endl;
+		//printing ip
+		for (int i = 0; i < n_host; i++) {
+			string key = names[i];
+			output << key << " num_of_ip: " << usedIP[key].size() << endl;
+			for (auto ip : usedIP[key])
+				output << ip << endl;
+		}
+		output << "End" << endl;
+		//printing link flow table
+		for (int link = 0; link < nl; link++) {
+			auto endpoints = v_pairs[link].first;
+			auto node1 = endpoints.first, node2 = endpoints.second;
+			int src_node = node1.first, src_port = node1.second, dst_node = node2.first, dst_port = node2.second;
+			set<string> to_delete;
+			for (auto it : PGtable[link]) {
+				if (it.second < 1.0e-5){
+					to_delete.insert(it.first);
+				}
+			}
+			for (auto it : to_delete)
+				PGtable[link].erase(it);
+			if (PGtable[link].size()==0) continue;
+			output << names[src_node] + "-eth" + to_string(src_port) << " " << names[dst_node] + "-eth" + to_string(dst_port) << "\tnum_of_flow:" << PGtable[link].size() << endl;
+			for (auto it : PGtable[link]) {
+				output << "\t\t" << it.first << " " << it.second << endl;
+			}
+		}
 		cout << "Problem is infeasible. Max-Min solution in allocation.txt!\n";
 	}
 
