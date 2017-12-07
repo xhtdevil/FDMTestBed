@@ -77,10 +77,10 @@ def WifiNet(inputFile):
     # Add links
     line = input.readline()
     while line.strip() != "End":
-        action, type_node, end1, end2 = line.strip().split()
+        action, type_node, end1, end2, bw, delay = line.strip().split()
         if end1[0] == "s" and int(end1[1:]) <= num_ship and end2[0] == "s":
             max_outgoing[int(end1[1:]) - 1] += 1
-        links.append([end1, end2])
+        links.append([end1, end2, bw, delay])
         line = input.readline()
 
     print(max_outgoing)
@@ -219,17 +219,16 @@ def WifiNet(inputFile):
 
     """ Add links """
     for link in links:
-        name1, name2 = link[0], link[1]
+        name1, name2, b, d = link[0], link[1], link[2], link[3]
         node1, node2 = nodes[name1], nodes[name2]
-        if(name1 == 's6' and name2 == 's9'):
-            net.addLink(node1, node2, bw = 30)
-            info('set *************************')
-        elif(name1 == 's7' and name2 == 's10'):
-            net.addLink(node1, node2, bw = 20)
-        elif (name1 == 's8' and name2 == 's11'):
-            net.addLink(node1, node2, bw = 15)
+        if(b!='inf' and d != '0'):
+            net.addLink(node1, node2, bw=float(b), delay=d+'ms')
+        elif(b!='inf'):
+            net.addLink(node1, node2,bw=float(b))
+        elif(d!='0'):
+            net.addLink(node1, node2, delay=d+'ms')
         else:
-            net.addLink(node1, node2)
+            net.addLink(node1,node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -241,10 +240,6 @@ def WifiNet(inputFile):
         info("--configing routing table of "+hosts[i])
         if os.path.isfile(hosts[i]+'.sh'):
             src.cmdPrint('./'+hosts[i]+'.sh')
-
-    # time.sleep(3)
-    # info('*** set queues ***\n')
-    # call(["sudo", "bash","FDMQueueConfig.sh"])
 
     time.sleep(3)
     info('*** set flow tables ***\n')
@@ -261,9 +256,9 @@ def WifiNet(inputFile):
 
     # start D-ITG application
     # set simulation time
-    sTime = 60000  # default 120,000ms
-    # bwReq = [10,10,8,6,6]
-    bwReq = [12,12,12,12,12]
+    sTime = 30000  # default 120,000ms
+    bwReq = [10,10,8,6,6]
+    # bwReq = [12,12,12,12,12]
     for i in range(0, num_host - 1):
         sender = i
         receiver = num_host - 1
@@ -277,7 +272,7 @@ def WifiNet(inputFile):
     # You need to change the path here
     call(["sudo", "python","../analysis/analysis.py"])
 
-    CLI(net)
+    # CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
@@ -299,4 +294,6 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    WifiNet("allocation.txt")
+    testTimes = 10
+    for i in range(0, testTimes):
+        WifiNet("all_1.txt")
