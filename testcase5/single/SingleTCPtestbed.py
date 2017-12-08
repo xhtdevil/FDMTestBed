@@ -10,28 +10,11 @@ from functools import partial
 import sys, time
 flush=sys.stdout.flush
 import os.path, string
-from threading import Thread
-
-class ServerSetup(Thread):
-    def __init__(self, node, name):
-        "Constructor"
-        Thread.__init__(self)
-        self.node = node
-        self.name = name
-
-    def run(self):
-        print("Server set up for iperf " + self.name)
-        self.node.cmdPrint("iperf -s")
-
-    def close(self, i):
-        self.running = False
-        print("exit " + self.name)
-
 
 def WifiNet(inputFile):
 
-    # enable mptcp
-    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=1"])
+    # disable mptcp
+    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=0"])
 
     input = open(inputFile, "r")
     """ Node names """
@@ -39,7 +22,13 @@ def WifiNet(inputFile):
     hosts = []
     switches = []  # satellite and dummy satellite
     links = []
+    sw_name = []
+    portCount = {} # count the current eth usage of a host/switch
+    linkToPort = {} # map link to certain ethernets of src and dst
 
+
+    flows = []
+    routingConfig = []
     queue_num = 1
     num_host = 0
     num_ship = 0
@@ -57,9 +46,9 @@ def WifiNet(inputFile):
         des_ip.append(ip)
         line = input.readline()
 
-    # Add nodes
-    # Mirror ships are switches
+
     line = input.readline()
+    # Add nodes
     while line.strip() != "End":
         action, type_node, target = line.strip().split()
         if type_node == "host:":
@@ -76,44 +65,20 @@ def WifiNet(inputFile):
 
     # Add links
     line = input.readline()
-    while line.strip() != "End":
-        action, type_node, end1, end2, bw, delay = line.strip().split()
-        if end1[0] == "s" and int(end1[1:]) <= num_ship and end2[0] == "s":
-            max_outgoing[int(end1[1:]) - 1] += 1
-        links.append([end1, end2, bw, delay])
-        line = input.readline()
-
+    lastline=""
+    while line.strip()!="End":
+    	line.strip()
+    	if line!=lastline:
+        	action, type_node, end1, end2, bw, delay = line.strip().split()
+        	if end1[0] == "s" and int(end1[1:]) <= num_ship and end2[0] == "s":
+            		max_outgoing[int(end1[1:]) - 1] += 1
+        	links.append([end1, end2, bw, delay])
+        lastline=line
+        line= input.readline()
+    input.close()
     print(max_outgoing)
-    # Routing table of hosts
-    line = input.readline()
-    while line.strip() != "End":
-        host, st, num_ip = line.strip().split()
-        file = open(host + ".sh", "w")
-        file.write("#!/bin/bash\n\n")
-        for i in range(0, int(num_ip)):
-            ipaddr = input.readline().strip()
-            intf = host + "-eth" + str(i)
-            file.write("ifconfig " + intf + " " + ipaddr + " netmask 255.255.255.255\n")
-            file.write("ip rule add from " + ipaddr + " table " + str(i + 1) + "\n")
-            file.write("ip route add " + ipaddr + "/32 dev " + intf + " scope link table " + str(i + 1) + "\n")
-            file.write("ip route add default via " + ipaddr + " dev " + intf + " table " + str(i + 1) + "\n")
-            if i == 0:
-                file.write("ip route add default scope global nexthop via " + ipaddr + " dev " + intf + "\n")
-        file.close()
-        call(["sudo", "chmod", "777", host + ".sh"])
-        line = input.readline()
-
-    # Flow table and queue
-    queue_num = 1
-    line = input.readline()
-    while line:
-        # print(line)
-        line = input.readline()
-
-    call(["sudo", "chmod", "777", "MPTCPFlowTable.sh"])
 
     net = Mininet(link=TCLink, controller=None, autoSetMacs = True)
-
     nodes = {}
 
     """ Initialize Ships """
@@ -143,52 +108,10 @@ def WifiNet(inputFile):
     info('*** Starting network ***\n')
     net.start()
 
-    #  set all ships
-    for i in range(0,num_host):
-        src=nodes[hosts[i]]
-        info("--configing routing table of "+hosts[i])
-        if os.path.isfile(hosts[i]+'.sh'):
-            src.cmdPrint('./'+hosts[i]+'.sh')
-
-
     time.sleep(3)
     info('*** set flow tables ***\n')
-    call(["sudo", "bash","MPTCPFlowTable.sh"])
+    call(["sudo","bash","SingleTCPFlowTable.sh"])
 
-    # info('*** start test ping and iperf***\n')
-    #
-    # myServer = []
-    # des_open = []
-    # for i in range(0,len(src_hosts)):
-    #     src = nodes[src_hosts[i]]
-    #     des = nodes[des_hosts[i]]
-    #     myServer.append("")
-    #     des_open.append(False)
-    #     if des.waiting == False:
-    #         info("Setting up server " + des_hosts[i] + " for iperf",'\n')
-    #         myServer[i] = ServerSetup(des, des_hosts[i])
-    #         myServer[i].setDaemon(True)
-    #         myServer[i].start()
-    #         des_open[i] = True
-    #         time.sleep(1)
-    #
-    # for i in range(0,len(src_hosts)):
-    #     src = nodes[src_hosts[i]]
-    #     des = nodes[des_hosts[i]]
-    #     info("testing",src_hosts[i],"<->",des_hosts[i],'\n')
-    #     src.cmdPrint('ping -c 2 ' + des_ip[i])
-    #     time.sleep(0.2)
-    #     src.cmdPrint('iperf -c ' + des_ip[i] + ' -t 3 -i 1')
-    #     time.sleep(0.2)
-    #
-    # time.sleep(10)
-    # for i in range(0,len(src_hosts)):
-    #     if des_open[i] == True:
-    #         print("Closing iperf session " + des_hosts[i])
-    #         myServer[i].close(i)
-    #
-    # time.sleep(5)
-    # start D-ITG Servers
     for i in range(0,5):
         for i in [2,5,8,11,14]:
             srv = nodes[hosts[i]]
@@ -203,10 +126,10 @@ def WifiNet(inputFile):
             # normal requirement
             senderList = [0,1,3,4,6,7,9,10,12,13]
             recvList = [11,14,2,8,5,11,5,8,2,11]
-            #bwReq = [6,4,7,3,4,4,3,3,3,3]
+            bwReq = [6,4,7,3,4,4,3,3,3,3]
 
             # large requirement
-            bwReq = [2,12,3,3,5,5,12,2,12,2]
+            #bwReq = [2,12,3,3,5,5,12,2,12,2]
             ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
             time.sleep(0.2)
         info("running simulaiton...\n")
@@ -226,6 +149,17 @@ def WifiNet(inputFile):
     net.stop()
     info('*** net.stop()\n')
 
+    # enable mptcp
+    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=1"])
+
+def iperfTest(srcNo, dstNo, hosts,nodes):
+    src = nodes[hosts[srcNo]]
+    dst = nodes[hosts[dstNo]]
+    info("iperfing",src.name,"<->",dst.name,"...",'\n')
+    src.cmdPrint("iperf -c 10.0.0." + str(dstNo + 1) + " -t 3600 -i 2 &")
+    time.sleep(0.2)
+    #src.cmdPrint("sudo wireshark &")
+
 def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     src = nodes[hosts[srcNo]]
     dst = nodes[hosts[dstNo]]
@@ -235,8 +169,4 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-
-    testTimes = 1
-    for i in range(0, testTimes):
-        WifiNet("all_6.txt")
-        #WifiNet("all_4_lar.txt")
+    WifiNet("all_5.txt")

@@ -40,6 +40,10 @@ def WifiNet(inputFile):
     switches = []  # satellite and dummy satellite
     links = []
 
+    queueConfig = open("FDMQueueConfig.sh", "w")
+    flowTableConfig = open("FDMFlowTableConfig.sh", "w")
+    queueConfig.write("#!/bin/bash\n\n")
+    flowTableConfig.write("#!/bin/bash\n\n")
     queue_num = 1
     num_host = 0
     num_ship = 0
@@ -106,11 +110,111 @@ def WifiNet(inputFile):
     # Flow table and queue
     queue_num = 1
     line = input.readline()
+    bwReq_fromFile=[]
     while line:
         # print(line)
-        line = input.readline()
+        end1, end2, num_flow = line.strip().split()
+        num_flow = num_flow.strip().split(":")[1]
 
-    call(["sudo", "chmod", "777", "MPTCPFlowTable.sh"])
+        # Routing tables have been configured
+        if "host" in end1:
+            bw=0
+            for i in range(0, int(num_flow)):
+                line = input.readline()
+                bw+=float(line.split()[1])
+            bwReq_fromFile.append(bw)
+        else:
+            switch, intf = end1.split("-")
+            index_switch = int(switch[1:])
+            index_intf = intf[3:]
+
+            if index_switch <= num_ship and "host" != end2[0:4]:
+                # uplink to ship, need to configure both flowtable and queue
+
+                # Set queue size to one to enable packet drop
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 100"
+                queueConfig.write(commandQueue + "\n")
+
+                # put the queues for one port on one line in definition
+                commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
+                queue_nums = []
+                rates = []
+                ipaddrs = []
+                for i in range(0, int(num_flow) - 1):
+                    ipaddr, rate = input.readline().strip().split()
+                    rates.append(rate)
+                    ipaddrs.append(ipaddr)
+                    queue_nums.append(queue_num)
+                    commandQueue += "queues:" + str(queue_num) + "=@q" + str(queue_num) + " "
+                    queue_num += 1
+                ipaddr, rate = input.readline().strip().split()
+                rates.append(rate)
+                ipaddrs.append(ipaddr)
+                queue_nums.append(queue_num)
+                commandQueue += "queues:" + str(queue_num) + "=@q" + str(queue_num) + " -- "
+                queue_num += 1
+
+                for i in range(0, int(num_flow) - 1):
+                    commandQueue += " --id=@q" + str(queue_nums[i]) + " create Queue other-config:min-rate=" + str(int(float(rates[i]) * 1000000)) + " other-config:max-rate=" + str(int(float(rates[i]) * 1000000)) + " -- "
+                commandQueue += " --id=@q" + str(queue_nums[len(queue_nums) - 1]) + " create Queue other-config:min-rate=" + str(int(float(rates[len(queue_nums) - 1]) * 1000000)) + " other-config:max-rate=" + str(int(float(rates[len(queue_nums) - 1]) * 1000000))
+                queueConfig.write(commandQueue + "\n")
+
+                for i in range(0, int(num_flow)):
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,nw_src=" + ipaddrs[i] + "/32,actions=set_queue:" + str(queue_nums[i]) + ",output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                flowTableConfig.write(commandFlowTable + "\n")
+            elif index_switch <= num_ship:
+                # ship to host downlink
+                # port forwarding
+                for i in range(0, int(num_flow)):
+                    input.readline()
+                for i in range(0, int(max_outgoing[index_switch - 1])):
+                    # ipaddr, rate = input.readline().strip().split()
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + str(int(index_intf) - i - 1) + ",actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                flowTableConfig.write(commandFlowTable + "\n")
+
+            elif index_switch <= num_ship + num_sat * 2:
+                # sat-hub-dummy_sat
+                # port forwarding
+                for i in range(0, int(num_flow)):
+                    input.readline()
+                for i in range(1, int(index_intf)):
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + str(i) + ",actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                flowTableConfig.write(commandFlowTable + "\n")
+            elif index_switch <= num_ship + num_sat * 3:
+                # dummy to mirror ship, ip forwarding
+                for i in range(0, int(num_flow)):
+                    ipaddr, rate = input.readline().strip().split()
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " ip,nw_src=" + ipaddr + "/32,actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                flowTableConfig.write(commandFlowTable + "\n")
+            else:
+                # mirror ship to host, port forwarding
+                for i in range(0, int(num_flow)):
+                    input.readline()
+                for i in range(1, int(index_intf)):
+                    commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + str(i) + ",actions=output:" + index_intf
+                    flowTableConfig.write(commandFlowTable + "\n")
+                commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
+                flowTableConfig.write(commandFlowTable + "\n")
+        line = input.readline()
+    for i in range(0, num_ship):
+        queueConfig.write("sudo ovs-ofctl -O Openflow13 queue-stats s" + str(i + 1) + "\n")
+
+    for i in range(0, num_ship + 3 * num_sat):
+        flowTableConfig.write("sudo ovs-ofctl add-flow s" + str(i + 1) + " priority=100,actions=normal\n")
+
+    flowTableConfig.close()
+    queueConfig.close()
+    call(["sudo", "chmod", "777", "FDMQueueConfig.sh"])
+    call(["sudo", "chmod", "777", "FDMFlowTableConfig.sh"])
 
     net = Mininet(link=TCLink, controller=None, autoSetMacs = True)
 
@@ -130,14 +234,10 @@ def WifiNet(inputFile):
     for link in links:
         name1, name2, b, d = link[0], link[1], link[2], link[3]
         node1, node2 = nodes[name1], nodes[name2]
-        if(b!='inf' and d != '0'):
-            net.addLink(node1, node2, bw=float(b), delay=d+'ms')
-        elif(b!='inf'):
-            net.addLink(node1, node2,bw=float(b))
-        elif(d!='0'):
-            net.addLink(node1, node2, delay=d+'ms')
+        if(d != '0'):
+            net.addLink(node1, node2,  delay=d+'ms')
         else:
-            net.addLink(node1,node2)
+            net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -150,10 +250,13 @@ def WifiNet(inputFile):
         if os.path.isfile(hosts[i]+'.sh'):
             src.cmdPrint('./'+hosts[i]+'.sh')
 
+    time.sleep(3)
+    info('*** set queues ***\n')
+    call(["sudo", "bash","FDMQueueConfig.sh"])
 
     time.sleep(3)
     info('*** set flow tables ***\n')
-    call(["sudo", "bash","MPTCPFlowTable.sh"])
+    call(["sudo", "bash","FDMFlowTableConfig.sh"])
 
     # info('*** start test ping and iperf***\n')
     #
@@ -189,6 +292,10 @@ def WifiNet(inputFile):
     #
     # time.sleep(5)
     # start D-ITG Servers
+
+
+    # start D-ITG application
+    # set simulation time
     for i in range(0,5):
         for i in [2,5,8,11,14]:
             srv = nodes[hosts[i]]
@@ -206,7 +313,7 @@ def WifiNet(inputFile):
             #bwReq = [6,4,7,3,4,4,3,3,3,3]
 
             # large requirement
-            bwReq = [2,12,3,3,5,5,12,2,12,2]
+            bwReq = bwReq_fromFile
             ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
             time.sleep(0.2)
         info("running simulaiton...\n")
@@ -238,5 +345,5 @@ if __name__ == '__main__':
 
     testTimes = 1
     for i in range(0, testTimes):
-        WifiNet("all_6.txt")
+        WifiNet("all_5.txt")
         #WifiNet("all_4_lar.txt")

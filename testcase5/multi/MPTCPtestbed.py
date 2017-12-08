@@ -203,10 +203,10 @@ def WifiNet(inputFile):
             # normal requirement
             senderList = [0,1,3,4,6,7,9,10,12,13]
             recvList = [11,14,2,8,5,11,5,8,2,11]
-            #bwReq = [6,4,7,3,4,4,3,3,3,3]
+            bwReq = [6,4,7,3,4,4,3,3,3,3]
 
             # large requirement
-            bwReq = [2,12,3,3,5,5,12,2,12,2]
+            #bwReq = [2,12,3,3,5,5,12,2,12,2]
             ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
             time.sleep(0.2)
         info("running simulaiton...\n")
@@ -238,5 +238,5 @@ if __name__ == '__main__':
 
     testTimes = 1
     for i in range(0, testTimes):
-        WifiNet("all_6.txt")
+        WifiNet("all_5.txt")
         #WifiNet("all_4_lar.txt")
