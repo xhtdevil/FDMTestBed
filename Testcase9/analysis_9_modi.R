@@ -7,7 +7,7 @@
 
 
 rm( list = ls (all = TRUE));
-filename="result9_um_modi.csv"
+filename="result9_greedy_modi.csv"
 data <- read.csv(filename, header = T, stringsAsFactors = FALSE, sep=",")
 data <- data[,-1]
 rownames(data) <- c("total_time","total_packets","min_delay","max_delay","avg_delay",

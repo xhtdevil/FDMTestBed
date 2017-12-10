@@ -55,14 +55,17 @@ def statAnalysis(sndList, recvList):
 
     for i in range(0, len(sndList)):
         decodedRecvFile = "receiver" + str(sndList[i]) + "ss" + str(recvList[i]) + ".txt"
+        decodedSenderFile = "sender" + str(sndList[i]) + ".txt"
         flag = 0
         f = open(decodedRecvFile,"r")
+        senderfile =open(decodedSenderFile,"r")
+
         if(i < len(sndList) - 1):
             str_split = ","
         else:
             str_split = '\n'
 
-        # read separate files
+        # read separate files from receiver
         while 1:
             line = f.readline()
 
@@ -79,9 +82,21 @@ def statAnalysis(sndList, recvList):
             avg_delay = findnSeek(flag, line, "Average delay", avg_delay, str_split)
             avg_jitter = findnSeek(flag, line, "Average jitter", avg_jitter, str_split)
             sd_delay = findnSeek(flag, line, "Delay standard", sd_delay, str_split)
+         
+                   # read separate files from sender
+        flag = 0
+        while 1:
+            line = senderfile.readline()
+
+            if not line:
+                break
+
+            if(line.find("TOTAL RESULTS") != -1):
+                flag = 1
+
             avg_bit_rate = findnSeek(flag, line, "Average bitrate", avg_bit_rate, str_split)
             avg_pkt_rate = findnSeek(flag, line, "Average packet", avg_pkt_rate, str_split)
-
+ 
     # write results to files
     g.write(str_ini)
     g.write(total_time)
@@ -94,6 +109,8 @@ def statAnalysis(sndList, recvList):
     g.write(avg_bit_rate)
     g.write(avg_pkt_rate)
     g.close()
+    f.close()
+    senderfile.close()
 
 def findnSeek(flag, line, findStr,result, str_split):
     if (flag == 1 and line.find(findStr) != -1):
