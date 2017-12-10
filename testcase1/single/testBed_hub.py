@@ -275,7 +275,7 @@ def WifiNet(inputFile):
     time.sleep(sTime/1000)
 
     # You need to change the path here
-    call(["sudo", "python","/mnt/hgfs/FDMTestBed/testcase1/analysis/analysis.py"])
+    call(["sudo", "python","../analysis/analysis.py"])
 
 
     CLI(net)
