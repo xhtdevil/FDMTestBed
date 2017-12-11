@@ -288,18 +288,20 @@ def WifiNet(inputFile):
     #
     # time.sleep(5)
     # start D-ITG Servers
-    for i in [2,5,8,11,14]:
-        srv = nodes[hosts[i]]
-        info("starting D-ITG servers...\n")
-        srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
-        srv.cmdPrint("./ITGRecv &")
 
-    time.sleep(1)
 
     # start D-ITG application
     # set simulation time
-    for i in range(0,1):
-        sTime = 30000# default 120,000ms
+    for i in range(0,5):
+        for i in [2,5,8,11,14]:
+            srv = nodes[hosts[i]]
+            info("starting D-ITG servers...\n")
+            srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+            srv.cmdPrint("./ITGRecv &")
+            srv.cmdPrint("PID=$!")
+
+        time.sleep(1)
+        sTime = 10000# default 120,000ms
         for i in range(0,10):
             # normal requirement
             senderList = [0,1,3,4,6,7,9,10,12,13]
@@ -314,9 +316,14 @@ def WifiNet(inputFile):
         info("please wait...\n")
 
         time.sleep(sTime/1000+10)
+        for i in [2,5,8,11,14]:
+            srv=nodes[hosts[i]]
+            info("killing D-ITG servers...\n")
+
+            srv.cmdPrint("kill $PID")
 
         # You need to change the path here
-        call(["sudo", "python","../analysis/analysis.py"])
+        call(["sudo", "python","analysis.py"])
     # CLI(net)
 
     net.stop()
