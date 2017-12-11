@@ -230,7 +230,15 @@ def WifiNet(inputFile):
     for link in links:
         name1, name2 = link[0], link[1]
         node1, node2 = nodes[name1], nodes[name2]
-        net.addLink(node1, node2)
+        if(name1 == 's6' and name2 == 's9'):
+            net.addLink(node1, node2, bw = 30)
+            info('set *************************')
+        elif(name1 == 's7' and name2 == 's10'):
+            net.addLink(node1, node2, bw = 20)
+        elif (name1 == 's8' and name2 == 's11'):
+            net.addLink(node1, node2, bw = 15)
+        else:
+            net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')

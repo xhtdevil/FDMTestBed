@@ -1,0 +1,133 @@
+host4 host5 10.0.0.6
+host3 host5 10.0.0.6
+host2 host5 10.0.0.6
+host1 host5 10.0.0.6
+host0 host5 10.0.0.6
+End
+add host: host0
+add host: host1
+add host: host2
+add host: host3
+add host: host4
+add host: host5
+add ship: s1
+add ship: s2
+add ship: s3
+add ship: s4
+add ship: s5
+add sat: s6
+add sat: s7
+add sat: s8
+add sat: s9
+add sat: s10
+add sat: s11
+add hub: s12
+End
+add link: host0 s1 inf 0
+add link: host0 s1 inf 0
+add link: host1 s2 inf 0
+add link: host1 s2 inf 0
+add link: host2 s3 inf 0
+add link: host3 s4 inf 0
+add link: host3 s4 inf 0
+add link: host4 s5 inf 0
+add link: host4 s5 inf 0
+add link: s1 s6 inf 0
+add link: s1 s8 inf 0
+add link: s2 s6 inf 0
+add link: s2 s7 inf 0
+add link: s3 s7 inf 0
+add link: s4 s6 inf 0
+add link: s4 s7 inf 0
+add link: s5 s6 inf 0
+add link: s5 s8 inf 0
+add link: s6 s9 30 100
+add link: s7 s10 20 100
+add link: s8 s11 15 100
+add link: s9 s12 inf 0
+add link: s10 s12 inf 0
+add link: s11 s12 inf 0
+add link: s12 host5 inf 0
+End
+host0 num_of_ip: 2
+10.0.1.1
+10.0.1.0
+host1 num_of_ip: 2
+10.0.2.1
+10.0.2.0
+host2 num_of_ip: 1
+10.0.3.0
+host3 num_of_ip: 2
+10.0.4.1
+10.0.4.0
+host4 num_of_ip: 2
+10.0.5.1
+10.0.5.0
+host5 num_of_ip: 0
+End
+host0-eth0 s1-eth1	num_of_flow:2
+		10.0.1.1 7.91787
+		10.0.1.0 5.65244
+host1-eth0 s2-eth1	num_of_flow:2
+		10.0.2.1 3.36255
+		10.0.2.0 10.2078
+host2-eth0 s3-eth1	num_of_flow:1
+		10.0.3.0 13.5703
+host3-eth0 s4-eth1	num_of_flow:2
+		10.0.4.1 2.97345
+		10.0.4.0 9.02655
+host4-eth0 s5-eth1	num_of_flow:2
+		10.0.5.1 7.00164
+		10.0.5.0 4.99836
+s1-eth3 s6-eth1	num_of_flow:1
+		10.0.1.0 5.65244
+s1-eth4 s8-eth1	num_of_flow:1
+		10.0.1.1 7.91787
+s2-eth3 s6-eth2	num_of_flow:1
+		10.0.2.0 10.2078
+s2-eth4 s7-eth1	num_of_flow:1
+		10.0.2.1 3.36255
+s3-eth2 s7-eth2	num_of_flow:1
+		10.0.3.0 13.5703
+s4-eth3 s6-eth3	num_of_flow:1
+		10.0.4.0 9.02655
+s4-eth4 s7-eth3	num_of_flow:1
+		10.0.4.1 2.97345
+s5-eth3 s6-eth4	num_of_flow:1
+		10.0.5.0 4.99836
+s5-eth4 s8-eth2	num_of_flow:1
+		10.0.5.1 7.00164
+s6-eth5 s9-eth1	num_of_flow:4
+		10.0.5.0 4.99836
+		10.0.4.0 9.02655
+		10.0.2.0 10.2078
+		10.0.1.0 5.65244
+s7-eth4 s10-eth1	num_of_flow:3
+		10.0.2.1 3.36255
+		10.0.4.1 2.97345
+		10.0.3.0 13.5703
+s8-eth3 s11-eth1	num_of_flow:2
+		10.0.1.1 7.91787
+		10.0.5.1 7.00164
+s9-eth2 s12-eth1	num_of_flow:4
+		10.0.5.0 4.99836
+		10.0.4.0 9.02655
+		10.0.2.0 10.2078
+		10.0.1.0 5.65244
+s10-eth2 s12-eth2	num_of_flow:3
+		10.0.2.1 3.36255
+		10.0.4.1 2.97345
+		10.0.3.0 13.5703
+s11-eth2 s12-eth3	num_of_flow:2
+		10.0.1.1 7.91787
+		10.0.5.1 7.00164
+s12-eth4 host5-eth0	num_of_flow:9
+		10.0.2.1 3.36255
+		10.0.5.0 4.99836
+		10.0.4.0 9.02655
+		10.0.3.0 13.5703
+		10.0.5.1 7.00164
+		10.0.2.0 10.2078
+		10.0.1.1 7.91787
+		10.0.4.1 2.97345
+		10.0.1.0 5.65244
