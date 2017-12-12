@@ -123,7 +123,7 @@ def WifiNet(inputFile):
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
-                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 100"
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 10"
                 queueConfig.write(commandQueue + "\n")
 
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
@@ -301,6 +301,6 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testTimes = 10
+    testTimes = 5
     for i in range(0, testTimes):
         WifiNet("all_2.txt")

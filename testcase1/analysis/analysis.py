@@ -104,6 +104,8 @@ def findnSeek(flag, line, findStr,result, str_split):
         result = result + '' # do nothing
         return(result)
 
+
+
 if __name__ == '__main__':
     # sender list
     sndList = [0, 1, 2, 3, 4]
