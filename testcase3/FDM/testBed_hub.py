@@ -123,7 +123,7 @@ def WifiNet(inputFile):
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
-                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 50"
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1"
                 queueConfig.write(commandQueue + "\n")
 
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
@@ -228,6 +228,7 @@ def WifiNet(inputFile):
             net.addLink(node1, node2,  delay=d+'ms')
         else:
             net.addLink(node1, node2)
+        # net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -240,11 +241,11 @@ def WifiNet(inputFile):
         if os.path.isfile(hosts[i]+'.sh'):
             src.cmdPrint('./'+hosts[i]+'.sh')
 
-    time.sleep(3)
+    time.sleep(0.3)
     info('*** set queues ***\n')
     call(["sudo", "bash","FDMQueueConfig.sh"])
 
-    time.sleep(3)
+    time.sleep(0.3)
     info('*** set flow tables ***\n')
     call(["sudo", "bash","FDMFlowTableConfig.sh"])
 
@@ -264,9 +265,9 @@ def WifiNet(inputFile):
     # start D-ITG application
     # set simulation time
     sTime = 30000  # default 120,000ms
-    # bwReq = [12,12,12,12,12]
+    bwReq = [12,12,12,12,12]
     # bwReq = [10,10,8,6,6]
-    bwReq = [24,4,4,4,22]
+    # bwReq = [24,4,4,4,22]
     for i in range(0, num_host - 1):
         sender = i
         receiver = num_host - 1
@@ -302,6 +303,6 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testTimes = 1
+    testTimes = 5
     for i in range(0, testTimes):
         WifiNet("all_3.txt")
