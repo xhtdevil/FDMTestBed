@@ -128,7 +128,7 @@ def WifiNet(inputFile):
                 # uplink to ship, need to configure both flowtable and queue
 
                 # Set queue size to one to enable packet drop
-                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1"
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1000"
                 queueConfig.write(commandQueue + "\n")
 
                 # put the queues for one port on one line in definition
@@ -230,7 +230,14 @@ def WifiNet(inputFile):
     for link in links:
         name1, name2 = link[0], link[1]
         node1, node2 = nodes[name1], nodes[name2]
-        net.addLink(node1, node2)
+        if(name1 == 's6' and name2 == 's9'):
+            net.addLink(node1,node2,bw=30, delay='100ms')
+        elif(name1 == 's7' and name2 == 's10'):
+            net.addLink(node1,node2,bw=20, delay='100ms')
+        elif(name1 == 's8' and name2 == 's11'):
+            net.addLink(node1,node2,bw=15, delay='100ms')
+        else:
+            net.addLink(node1, node2)
 
     """ Start the simulation """
     info('*** Starting network ***\n')
@@ -295,24 +302,25 @@ def WifiNet(inputFile):
 
     # start D-ITG application
     # set simulation time
-    sTime = 60000# default 120,000ms
-    for i in range(0,10):
-        # normal requirement
-        senderList = [0,1,3,4,6,7,9,10,12,13]
-        recvList = [11,14,2,8,5,11,5,8,2,11]
-        # bwReq = [6,4,7,3,4,4,3,3,3,3]
+    for i in range(0,5):
+        sTime = 30000# default 120,000ms
+        for i in range(0,10):
+            # normal requirement
+            senderList = [0,1,3,4,6,7,9,10,12,13]
+            recvList = [11,14,2,8,5,11,5,8,2,11]
+            bwReq = [6,4,7,3,4,4,3,3,3,3]
 
-        # large requirement
-        bwReq = [2,12,3,3,5,5,12,2,12,2]
-        ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
-        time.sleep(0.2)
-    info("running simulaiton...\n")
-    info("please wait...\n")
+            # large requirement
+            #bwReq = [2,12,3,3,5,5,12,2,12,2]
+            ITGTest(senderList[i], recvList[i], hosts, nodes, bwReq[i]*125, sTime)
+            time.sleep(0.2)
+        info("running simulaiton...\n")
+        info("please wait...\n")
 
-    time.sleep(sTime/1000)
+        time.sleep(sTime/1000+10)
 
-    # You need to change the path here
-    call(["sudo", "python","../analysis/analysis.py"])
+        # You need to change the path here
+        call(["sudo", "python","../analysis/analysis.py"])
     # CLI(net)
 
     net.stop()
@@ -328,7 +336,7 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
 if __name__ == '__main__':
     setLogLevel('info')
 
-    testTimes = 5
+    testTimes = 1
     for i in range(0, testTimes):
-        # WifiNet("allocation.txt")
-        WifiNet("all_4_lar.txt")
+        WifiNet("allocation.txt")
+        #WifiNet("all_4_lar.txt")
