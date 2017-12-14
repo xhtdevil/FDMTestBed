@@ -100,8 +100,12 @@ def WifiNet(inputFile):
         name1, name2 = link[0], link[1]
         node1, node2 = nodes[name1], nodes[name2]
         if(name1 == 's6' and name2 == 's9'):
+<<<<<<< HEAD
             net.addLink(node1, node2, bw = 30, delay='100ms')
             info('set *************************')
+=======
+            net.addLink(node1, node2, bw = 30)
+>>>>>>> cb978180496974428f2b1cdc856cbdd7027fc825
         elif(name1 == 's7' and name2 == 's10'):
             net.addLink(node1, node2, bw = 20, delay='100ms')
         elif (name1 == 's8' and name2 == 's11'):
