@@ -224,6 +224,6 @@ def ITGUDPGeneration(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testTimes = 1
+    testTimes = 5
     for i in range(0, testTimes):
         WifiNet("allocation_9.txt")
