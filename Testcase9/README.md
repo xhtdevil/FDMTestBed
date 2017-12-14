@@ -16,7 +16,7 @@ Each directory should contain at least the following files:
 * Flowtable
 * Queuetable (only FDM-based algorithms have)
 
-To run the test, fist use command "cd" to go into that particular directory, and then "**sudo python testBed_hub.py**".
+To run the test, first use command "cd" to go into that particular directory, and then "**sudo python testBed_hub.py**".
 
 After the program finishes, **go to /home/osboxes/D-ITG-2.8.1-r1023/bin/ to seek generated csv files.**
 
