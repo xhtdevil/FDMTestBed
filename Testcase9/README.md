@@ -1,6 +1,6 @@
 # Testcase9 
 ## testcase9\_original:
-In order to compare the SingleTCP, MPTCP and FDM, the following directoris are useful:  
+In order to compare the SingleTCP, MPTCP and FDM, the following directories are useful:  
  
 * testcase9_single
 * testcase9_mptcp
