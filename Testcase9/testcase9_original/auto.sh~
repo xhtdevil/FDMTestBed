@@ -1,0 +1,7 @@
+#!/bin/bash
+cd FDM/
+sudo python testBed_hub.py
+#cd ../multi
+#sudo python testBed_hub.py
+cd ../single
+sudo python testBed_hub.py

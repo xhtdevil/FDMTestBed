@@ -31,7 +31,7 @@ def statAnalysis(sndList, recvList):
     '''
     time = datetime.datetime.now()
     fileName = "result_" + str(time) + ".csv"
-    g = open(fileName, "w")
+    g = open("/home/osboxes/FDMTestBed-revert/FDMTestBed/Testcase9/testcase9_modi/multi/"+fileName, "w")
     str_ini = 'host,'
 
     # sender host list
@@ -82,7 +82,7 @@ def statAnalysis(sndList, recvList):
             avg_delay = findnSeek(flag, line, "Average delay", avg_delay, str_split)
             avg_jitter = findnSeek(flag, line, "Average jitter", avg_jitter, str_split)
             sd_delay = findnSeek(flag, line, "Delay standard", sd_delay, str_split)
-         
+
                    # read separate files from sender
         flag = 0
         while 1:
@@ -96,7 +96,7 @@ def statAnalysis(sndList, recvList):
 
             avg_bit_rate = findnSeek(flag, line, "Average bitrate", avg_bit_rate, str_split)
             avg_pkt_rate = findnSeek(flag, line, "Average packet", avg_pkt_rate, str_split)
- 
+
     # write results to files
     g.write(str_ini)
     g.write(total_time)

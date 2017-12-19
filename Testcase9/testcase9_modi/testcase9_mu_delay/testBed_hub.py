@@ -84,7 +84,7 @@ def WifiNet(inputFile):
         line = input.readline()
 
     print(max_outgoing)
-    
+
     # Routing table of hosts
     line = input.readline()
     udphost=set()
@@ -166,7 +166,7 @@ def WifiNet(inputFile):
 
                 commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
                 flowTableConfig.write(commandFlowTable + "\n")
-           
+
             else:
                 # sat-dummy_sat
                 # port forwarding
@@ -177,7 +177,7 @@ def WifiNet(inputFile):
                     flowTableConfig.write(commandFlowTable + "\n")
                 commandFlowTable = "sudo ovs-ofctl add-flow " + switch + " in_port=" + index_intf + ",actions=normal"
                 flowTableConfig.write(commandFlowTable + "\n")
-            
+
         line = input.readline()
     for i in range(0, num_ship):
         queueConfig.write("sudo ovs-ofctl -O Openflow13 queue-stats s" + str(i + 1) + "\n")
@@ -232,40 +232,43 @@ def WifiNet(inputFile):
     info('*** set flow tables ***\n')
     call(["sudo", "bash","FDMFlowTableConfig.sh"])
 
+    for i in range(0,5):
     # start D-ITG Servers
-    for i in [num_host - 1]: # last host is receiver
-        srv = nodes[hosts[i]]
-        info("starting D-ITG servers...\n")
-        srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
-        srv.cmdPrint("./ITGRecv &")
+        for i in [num_host - 1]: # last host is receiver
+            srv = nodes[hosts[i]]
+            info("starting D-ITG servers...\n")
+            srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+            srv.cmdPrint("./ITGRecv &")
+            srv.cmdPrint("PID=$!")
 
-    time.sleep(1)
-   
-    print("This is UDP set")
-    for item in udphost:
-    	print(item)
-    
-    # start D-ITG application
-    # set simulation time
-    sTime = 120000  # default 120,000ms
-    
-    for i in range(0, num_host - 1):
-        sender = i
-        receiver = num_host - 1
-        host = "host"+str(sender)
-        if host in udphost:
-		ITGUDPGeneration(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
-        else:
-        	ITGTCPGeneration(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
-        time.sleep(0.2)
-    info("running simulaiton...\n")
-    info("please wait...\n")
+        time.sleep(1)
 
-    time.sleep(sTime/1000)
-    # You need to change the path here
-    os.system("python analysis-9.py")
+        print("This is UDP set")
+        for item in udphost:
+        	print(item)
 
-    # CLI(net)
+        # start D-ITG application
+        # set simulation time
+        sTime = 60000  # default 120,000ms
+
+        for i in range(0, num_host - 1):
+            sender = i
+            receiver = num_host - 1
+            host = "host"+str(sender)
+            if host in udphost:
+    		ITGUDPGeneration(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
+            else:
+            	ITGTCPGeneration(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
+            time.sleep(0.2)
+        info("running simulaiton...\n")
+        info("please wait...\n")
+
+        time.sleep(sTime/1000+10)
+        for i in [num_host-1]:
+            srv=nodes[hosts[i]]
+            srv.cmdPrint("kill $PID")
+        # You need to change the path here
+        os.system("python analysis-9.py")
 
     net.stop()
     info('*** net.stop()\n')
@@ -286,6 +289,6 @@ def ITGUDPGeneration(srcNo, dstNo, hosts, nodes, bw, sTime):
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testTimes = 5
+    testTimes = 1
     for i in range(0, testTimes):
         WifiNet("allocation_mu_9_modified.txt")
