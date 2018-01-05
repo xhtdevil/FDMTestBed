@@ -28,6 +28,10 @@ class ServerSetup(Thread):
         print("exit " + self.name)
 
 def WifiNet(inputFile):
+    call(["sudo", "sysctl","-w","net.mptcp.mptcp_enabled=1"])
+    call(["sudo", "modprobe","mptcp_coupled"])
+    call(["sudo", "sysctl","-w", "net.ipv4.tcp_congestion_control=lia"])
+
     input = open(inputFile, "r")
     """ Node names """
     max_outgoing = []
@@ -105,6 +109,7 @@ def WifiNet(inputFile):
 
     # Flow table and queue
     queue_num = 1
+    host_eth=[]
     line = input.readline()
     while line:
         # print(line)
@@ -113,6 +118,7 @@ def WifiNet(inputFile):
 
         # Routing tables have been configured
         if "host" in end1:
+            host_eth.append(int(num_flow))
             for i in range(0, int(num_flow)):
                 line = input.readline()
         else:
@@ -123,7 +129,7 @@ def WifiNet(inputFile):
             if index_switch <= num_ship and "host" != end2[0:4]:
                 # uplink to ship, need to configure both flowtable and queue
                 # put the queues for one port on one line in definition
-                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 1"
+                commandQueue = "sudo ifconfig " + end1 + " txqueuelen 100"
                 queueConfig.write(commandQueue + "\n")
 
                 commandQueue = "sudo ovs-vsctl -- set Port " + end1 + " qos=@newqos -- --id=@newqos create QoS type=linux-htb other-config:max-rate=100000000 "
@@ -226,6 +232,7 @@ def WifiNet(inputFile):
         node1, node2 = nodes[name1], nodes[name2]
         if(d != '0'):
             net.addLink(node1, node2,  delay=d+'ms')
+            #net.addLink(node1, node2,  delay=d+'ms', loss=2, use_htb=True)
         else:
             net.addLink(node1, node2)
         # net.addLink(node1, node2)
@@ -252,36 +259,51 @@ def WifiNet(inputFile):
     # time.sleep(3)
     # info('*** set flow tables ***\n')
     # call(["sudo", "bash","MPTCPFlowTable.sh"])
-
+    for i in range(0,1):
     # start D-ITG Servers
-    for i in [num_host - 1]: # last host is receiver
-        srv = nodes[hosts[i]]
-        info("starting D-ITG servers...\n")
-        srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
-        srv.cmdPrint("./ITGRecv &")
+        for i in [num_host - 1]: # last host is receiver
+            srv = nodes[hosts[i]]
+            info("starting D-ITG servers...\n")
+            srv.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
+            srv.cmdPrint("./ITGRecv &")
+            srv.cmdPrint("PID=$!")
 
-    time.sleep(1)
+        time.sleep(1)
 
-    # start D-ITG application
-    # set simulation time
-    sTime = 30000  # default 120,000ms
-    bwReq = [12,12,12,12,12]
-    # bwReq = [10,10,8,6,6]
-    # bwReq = [24,4,4,4,22]
-    for i in range(0, num_host - 1):
-        sender = i
-        receiver = num_host - 1
-        ITGTest(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
-        time.sleep(0.2)
-    info("running simulaiton...\n")
-    info("please wait...\n")
+        # start D-ITG application
+        # set simulation time
+        sTime = 60000  # default 120,000ms
+        bwReq = [12,12,12,12,12]
+        #bwReq = [1.2,1.2,1.2,1.2,1.2]
+        # bwReq = [10,10,8,6,6]
+        # bwReq = [24,4,4,4,22]
+        for i in range(0, num_host - 1):
+            sender = i
+            receiver = num_host - 1
+            ITGTest(sender, receiver, hosts, nodes, bwReq[i]*125, sTime)
+            srv=nodes[hosts[i]]
+            for j in range(0,host_eth[i]):
+                srv.cmdPrint("tcpdump -i host"+str(i)+"-eth"+str(j)+" -w host"+str(i)+"eth"+str(j)+".pcap &")
+            time.sleep(0.2)
+        info("running simulaiton...\n")
+        info("please wait...\n")
 
-    time.sleep(sTime/1000)
-
-    # You need to change the path here
-    call(["sudo", "python","../analysis/analysis.py"])
-
-    # CLI(net)
+        time.sleep(sTime/1000+10)
+        for i in [num_host-1]:
+            srv=nodes[hosts[i]]
+            info("killing D-ITG servers...\n")
+            srv.cmdPrint("kill $PID")
+        # You need to change the path here
+        call(["sudo", "python","analysis.py"])
+        #obtain the throughput and rtt
+        for i in range(0, num_host - 1):
+            sender = i
+            srv=nodes[hosts[i]]
+            for j in range(host_eth[i]-1,-1,-1):
+                ip="10.0."+str(i+1)+"."+str(j)
+                out_f="host"+str(i)+"eth"+str(host_eth[i]-1-j)+".stat"
+                srv.cmdPrint("tshark -r host"+str(i)+"eth"+str(host_eth[i]-1-j)+".pcap -qz \"io,stat,0,BYTES()ip.src=="+ip+",AVG(tcp.analysis.ack_rtt)tcp.analysis.ack_rtt&&ip.addr=="+ip+"\" >"+out_f)
+        # CLI(net)
 
     net.stop()
     info('*** net.stop()\n')
@@ -299,10 +321,11 @@ def ITGTest(srcNo, dstNo, hosts, nodes, bw, sTime):
     dst = nodes[hosts[dstNo]]
     info("Sending message from ",src.name,"<->",dst.name,"...",'\n')
     src.cmdPrint("cd ~/D-ITG-2.8.1-r1023/bin")
-    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -C "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
+    src.cmdPrint("./ITGSend -T TCP  -a 10.0.0."+str(dstNo+1)+" -c 1000 -O "+str(bw)+" -t "+str(sTime)+" -l sender"+str(srcNo)+".log -x receiver"+str(srcNo)+"ss"+str(dstNo)+".log &")
 
 if __name__ == '__main__':
     setLogLevel('info')
-    testTimes = 5
+    testTimes = 1
     for i in range(0, testTimes):
         WifiNet("all_3.txt")
+        #WifiNet("../all_3.txt")
